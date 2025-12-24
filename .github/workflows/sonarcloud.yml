@@ -1,10 +1,12 @@
 name: SonarQube Cloud
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
+  # Disabled until Automatic Analysis is disabled in SonarCloud
+  # push:
+  #   branches: [ main, develop ]
+  # pull_request:
+  #   branches: [ main, develop ]
+  workflow_dispatch:  # Manual trigger only
 
 jobs:
   sonarcloud:
