@@ -17,10 +17,10 @@ setup(
     url="https://github.com/yourusername/PREDEP-analysis",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
+    license="MIT",
     classifiers=[
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.9",
-        "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Topic :: Scientific/Engineering :: Atmospheric Science",
         "Intended Audience :: Science/Research",
