@@ -52,32 +52,38 @@ def predep(X, Y, n_boot=10000):
     3. Calcula s(X|Y) para cada partição
     4. Retorna α = (s(X|Y) - s(X)) / s(X|Y)
     """
-    BX1 = np.random.choice(X, n_boot)
-    BX2 = np.random.choice(X, n_boot)
-    DX = BX1 - BX2
-    s_x = ss.gaussian_kde(DX).pdf(0)
+    try:
+        X = np.asarray(X)
+        Y = np.asarray(Y)
+        
+        BX1 = np.random.choice(X, n_boot)
+        BX2 = np.random.choice(X, n_boot)
+        DX = BX1 - BX2
+        s_x = float(ss.gaussian_kde(DX).pdf(0))
 
-    edges_y = bayesian_blocks(Y)
-    ecdf_y = ecdf(Y)
+        edges_y = bayesian_blocks(Y)
+        ecdf_y = ecdf(Y)
 
-    s_x_mid_y = 0
-    if edges_y.shape[0] > 1:
-        for i in range(1, edges_y.shape[0]):
-            bg = edges_y[i - 1]
-            ed = edges_y[i]
-            X_mid_Y = X[(Y >= bg) & (Y < ed)]
-            if X_mid_Y.shape[0] == 0:
-                continue
+        s_x_mid_y = 0.0
+        if edges_y.shape[0] > 1:
+            for i in range(1, edges_y.shape[0]):
+                bg = edges_y[i - 1]
+                ed = edges_y[i]
+                X_mid_Y = X[(Y >= bg) & (Y < ed)]
+                if X_mid_Y.shape[0] == 0:
+                    continue
 
-            BX_mid_Y1 = np.random.choice(X_mid_Y, n_boot)
-            BX_mid_Y2 = np.random.choice(X_mid_Y, n_boot)
-            DX_mid_Y = BX_mid_Y1 - BX_mid_Y2
+                BX_mid_Y1 = np.random.choice(X_mid_Y, n_boot)
+                BX_mid_Y2 = np.random.choice(X_mid_Y, n_boot)
+                DX_mid_Y = BX_mid_Y1 - BX_mid_Y2
 
-            p_range = ecdf_y(ed) - ecdf_y(bg)
+                p_range = ecdf_y(ed) - ecdf_y(bg)
 
-            p_x_mid_y = ss.gaussian_kde(DX_mid_Y).pdf(0)
-            s_x_mid_y += p_range * (p_x_mid_y)
-        alpha_est = (s_x_mid_y - s_x) / s_x_mid_y
-        return alpha_est
-    else:
+                p_x_mid_y = float(ss.gaussian_kde(DX_mid_Y).pdf(0))
+                s_x_mid_y += p_range * p_x_mid_y
+            alpha_est = (s_x_mid_y - s_x) / s_x_mid_y
+            return float(alpha_est)
+        else:
+            return np.nan
+    except (np.linalg.LinAlgError, ValueError, ZeroDivisionError):
         return np.nan
