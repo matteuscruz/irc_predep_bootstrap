@@ -1,0 +1,71 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Data
+data/processed/
+data/raw/*.nc
+data/raw/*.h5
+
+# Results
+results/**/*.nc
+results/**/*.png
+results/**/*.pdf
+!results/**/.gitkeep
+
+# Logs
+logs/*.log
+!logs/.gitkeep
+
+# Checkpoints
+checkpoints/
+.cache/
+
+# Notebooks
+.ipynb_checkpoints
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Config files (except templates)
+config/local_*.yaml
