@@ -38,9 +38,9 @@ venv.bak/
 *~
 
 # Data
-data/processed/
-data/raw/*.nc
-data/raw/*.h5
+data/
+!data/.gitkeep
+!data/README.md
 
 # Results
 results/**/*.nc

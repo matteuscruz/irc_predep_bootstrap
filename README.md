@@ -35,36 +35,61 @@ cd irc_predep_bootstrap
 uv sync
 ```
 
-## 📊 Uso Rápido
+## 🧪 Experimentos
 
-### Teste Inicial
-Execute um teste rápido com o índice ATL3 e precipitação MAM:
+### Estrutura de Experimentos
+
+```
+experiments/
+├── initial_test.py          # Teste ATL3 vs MAM
+├── full_analysis.py         # Análise completa
+├── interactive_predep.py    # Teste interativo
+├── synthetic_pairs.py       # Pares sintéticos
+└── results/                 # Resultados dos experimentos
+```
+
+### Executar Experimentos
 
 ```bash
-python main.py
+# Teste inicial (ATL3 vs MAM)
+.venv/bin/python experiments/initial_test.py
+
+# Análise completa (todos MoVs)
+.venv/bin/python experiments/full_analysis.py
+
+# Teste interativo
+.venv/bin/python experiments/interactive_predep.py
+
+# Pares sintéticos
+.venv/bin/python experiments/synthetic_pairs.py
 ```
 
-### Análise Completa
-Para executar a análise completa de todos os MoVs e estações:
+### Criar Novo Experimento
 
 ```python
-from main import run_full_analysis
-results = run_full_analysis()
-```
-
-### Uso Programático
-```python
+# experiments/meu_experimento.py
 from src.predep_calculation.core import predep
-import numpy as np
+import pandas as pd
 
-# Dados de exemplo
-x = np.random.normal(0, 1, 100)
-y = 0.5 * x + np.random.normal(0, 0.5, 100)
+def meu_experimento():
+    # Carregar dados
+    mov_data = pd.read_csv("data/input/merged_indices.csv")
+    
+    # Preparar variáveis
+    X = mov_data['ATL3'].dropna().values
+    Y = mov_data['NAO'].dropna().values
+    
+    # Calcular PREDEP
+    alpha = predep(X, Y, n_boot=10000)
+    print(f"PREDEP α = {alpha:.4f}")
+    
+    return alpha
 
-# Calcular PREDEP
-alpha = predep(x, y, n_boot=10000)
-print(f"PREDEP α = {alpha:.4f}")
+if __name__ == "__main__":
+    meu_experimento()
 ```
+
+Executar: `.venv/bin/python experiments/meu_experimento.py`
 
 ## 📁 Estrutura do Projeto
 
