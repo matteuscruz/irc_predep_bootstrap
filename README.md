@@ -221,22 +221,6 @@ python scripts/monitored_run.py
 
 Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para detalhes.
 
-## 👥 Autores
-
-- **Seu Nome** - *Desenvolvimento inicial* - [GitHub](https://github.com/username)
-
-## 🙏 Agradecimentos
-
-- Equipe do IRC (International Research Centre)
-- Comunidade científica de análise climática
-- Desenvolvedores das bibliotecas utilizadas
-
-## 📞 Contato
-
-- Email: seu.email@exemplo.com
-- LinkedIn: [Seu Perfil](https://linkedin.com/in/seuperfil)
-- Issues: [GitHub Issues](https://github.com/username/irc_predep_bootstrap/issues)
-
 ---
 
 **Nota**: Este é um projeto de pesquisa científica. Para uso em produção, considere validação adicional dos resultados.
