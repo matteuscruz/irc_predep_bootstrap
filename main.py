@@ -1,5 +1,5 @@
 """
-Script principal para cálculo PREDEP.
+Script Principal - PREDEP Bootstrap
 Interface de entrada para diferentes tipos de análise.
 """
 
@@ -26,17 +26,16 @@ def main():
     print("PREDEP - Análise de Dependência Preditiva")
     print("=" * 40)
     
-    # Carregar dados
     mov_data, precip_data = load_data()
     
     print(f"Dados carregados:")
     print(f"- MoVs: {list(mov_data.columns)}")
     print(f"- Precipitação: {precip_data.dims}")
     
-    print("\nPara executar análises:")
-    print("- Experimentos: pasta experiments/")
-    print("- Testes: pasta tests/")
-    print("- Função PREDEP: src/predep_calculation/core.py")
+    print("\nExperimentos disponíveis:")
+    print("- python experiments/preliminary_results.py  # Resultados preliminares ATL3")
+    print("- python experiments/initial_test.py         # Teste ATL3 vs MAM")
+    print("- python experiments/full_analysis.py        # Análise completa")
 
 
 if __name__ == "__main__":

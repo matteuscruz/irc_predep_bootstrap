@@ -37,31 +37,82 @@ uv sync
 
 ## 🧪 Experimentos
 
+### Experimento Preliminar (Recomendado)
+
+**Análise Espacial PREDEP - ATL3 vs MAM**
+
+```bash
+# Ativar ambiente virtual
+source .venv/bin/activate
+
+# Executar experimento
+python experiments/preliminary_exp.py
+```
+
+**O que faz:**
+- Calcula PREDEP espacial entre ATL3 e precipitação MAM
+- Lags: 0-12 meses
+- Bootstrap: 5.000 amostras
+- Grade: 393 lat × 391 lon (~153.000 pontos)
+- Gera mapas automaticamente
+
+**Tempo estimado:** ~10-15 minutos
+
+**Saídas:**
+- `results/spatial/ATL3_MAM_spatial.nc` - Dados completos em NetCDF
+- `results/spatial/ATL3_MAM_spatial_maps.png` - 13 mapas (um por lag)
+
+**Visualizar resultados:**
+```bash
+# Abrir imagem
+xdg-open results/spatial/ATL3_MAM_spatial_maps.png
+
+# Ou copiar para área de trabalho
+cp results/spatial/ATL3_MAM_spatial_maps.png ~/Desktop/
+```
+
+**Documentação completa:** `experiments/PRELIMINARY_EXP_DOC.md`
+
+---
+
+### Executar Análise Preliminar (Legado)
+
+```bash
+# Resultados preliminares - ATL3 para todas as estações
+python experiments/preliminary_results.py
+```
+
+O experimento executa:
+- Cálculo PREDEP para ATL3 vs todas as estações (DJF, MAM, JJA, SON)
+- Lags de 0-12 meses
+- Bootstrap com 10.000 amostras
+- Geração automática de gráficos
+- Salva resultados em CSV e NetCDF
+
+**Saídas:**
+- `results/preliminary/ATL3_results.csv` - Resultados tabulares
+- `results/preliminary/ATL3_results.nc` - Resultados em NetCDF
+- `results/preliminary/ATL3_grid.png` - Grade 2x2 por estação
+- `results/preliminary/ATL3_comparison.png` - Comparação entre estações
+
 ### Estrutura de Experimentos
 
 ```
 experiments/
+├── preliminary_results.py   # Resultados preliminares ATL3
 ├── initial_test.py          # Teste ATL3 vs MAM
 ├── full_analysis.py         # Análise completa
-├── interactive_predep.py    # Teste interativo
-├── synthetic_pairs.py       # Pares sintéticos
 └── results/                 # Resultados dos experimentos
 ```
 
-### Executar Experimentos
+### Executar Experimentos Adicionais
 
 ```bash
 # Teste inicial (ATL3 vs MAM)
-.venv/bin/python experiments/initial_test.py
+python experiments/initial_test.py
 
 # Análise completa (todos MoVs)
-.venv/bin/python experiments/full_analysis.py
-
-# Teste interativo
-.venv/bin/python experiments/interactive_predep.py
-
-# Pares sintéticos
-.venv/bin/python experiments/synthetic_pairs.py
+python experiments/full_analysis.py
 ```
 
 ### Criar Novo Experimento
@@ -207,6 +258,7 @@ python scripts/monitored_run.py
 
 ## 📚 Documentação Adicional
 
+- [Metodologia de Bootstrap](documentation/bootstrap_methodology.md) - Detalhes técnicos do algoritmo
 - [Notebooks Exploratórios](notebooks/exploratory/)
 - [Configurações Avançadas](config/)
 - [Scripts Utilitários](scripts/)
