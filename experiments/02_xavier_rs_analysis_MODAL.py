@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Análise PREDEP - Rio Grande do Sul com Dados XAVIER (Modal Paralelo)
+Análise PREDEP - Brasil com Dados XAVIER (Modal Paralelo)
 Executa cada trimestre em container isolado para paralelismo real
 """
 
@@ -16,17 +16,17 @@ image = (
     .apt_install(["libproj-dev", "proj-data", "proj-bin"])
 )
 
-app = modal.App("xavier-predep-parallel", image=image)
+app = modal.App("xavier-predep-brazil", image=image)
 volume = modal.Volume.from_name("xavier-data", create_if_missing=True)
 
-# Limites RS
-RS_LAT_MIN, RS_LAT_MAX = -36.0, -25.0
-RS_LON_MIN, RS_LON_MAX = -60.0, -47.0
+# Limites Brasil
+BRAZIL_LAT_MIN, BRAZIL_LAT_MAX = -34.0, 6.0
+BRAZIL_LON_MIN, BRAZIL_LON_MAX = -75.0, -34.0
 
 
 @app.function(
-    memory=16384,
-    timeout=3600 * 8,
+    memory=32768,
+    timeout=3600 * 12,
     volumes={"/data": volume}
 )
 def process_season(season: str, n_boot: int = 500):
@@ -88,7 +88,7 @@ def process_season(season: str, n_boot: int = 500):
     
     def load_xavier_seasonal():
         """Carrega dados XAVIER do volume Modal."""
-        monthly_file = "/data/input/pr_monthly_1961_2019_RS_combined.nc"
+        monthly_file = "/data/input/pr_monthly_1961_2019_BRAZIL_combined.nc"
         ds = xr.open_dataset(monthly_file)
         
         season_months = {
@@ -170,7 +170,7 @@ def process_season(season: str, n_boot: int = 500):
     # Configurações
     season_month_map = {'DJF': 1, 'MAM': 4, 'JJA': 7, 'SON': 10}
     season_month = season_month_map[season]
-    n_lags = 13
+    n_lags = 12  # 0-11 meses
     
     # Dataset resultados
     results = xr.Dataset(
@@ -205,9 +205,9 @@ def process_season(season: str, n_boot: int = 500):
         print(f"   Lag {lag}: {valid} pontos válidos")
     
     # Salvar
-    output_dir = Path("/data/results/xavier_rs")
+    output_dir = Path("/data/results/xavier_brazil")
     output_dir.mkdir(parents=True, exist_ok=True)
-    nc_file = output_dir / f"AAO_{season}_xavier_rs.nc"
+    nc_file = output_dir / f"AAO_{season}_xavier_brazil.nc"
     results.to_netcdf(nc_file)
     
     duration = time.time() - start_time
@@ -238,12 +238,12 @@ def combine_results():
     
     print("\n📊 Combinando resultados...")
     
-    output_dir = Path("/data/results/xavier_rs")
+    output_dir = Path("/data/results/xavier_brazil")
     seasons = ["DJF", "MAM", "JJA", "SON"]
     
     all_data = []
     for season in seasons:
-        nc_file = output_dir / f"AAO_{season}_xavier_rs.nc"
+        nc_file = output_dir / f"AAO_{season}_xavier_brazil.nc"
         if nc_file.exists():
             ds = xr.open_dataset(nc_file)
             all_data.append(ds)
@@ -251,7 +251,7 @@ def combine_results():
     
     if len(all_data) == 4:
         combined = xr.concat(all_data, dim='season')
-        combined_file = output_dir / "AAO_ALL_SEASONS_xavier_rs.nc"
+        combined_file = output_dir / "AAO_ALL_SEASONS_xavier_brazil.nc"
         combined.to_netcdf(combined_file)
         print(f"✅ Arquivo combinado: {combined_file}")
         return str(combined_file)
@@ -268,9 +268,10 @@ def main(n_boot: int = 500):
     start_time = time.time()
     
     print("="*80)
-    print("🚀 ANÁLISE PREDEP PARALELA - MODAL")
+    print("🚀 ANÁLISE PREDEP PARALELA - MODAL (BRASIL)")
     print(f"⏰ Início: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"🔧 Bootstrap: {n_boot}")
+    print(f"🌎 Região: Brasil completo")
     print("="*80)
     
     seasons = ["DJF", "MAM", "JJA", "SON"]
@@ -305,7 +306,7 @@ def main(n_boot: int = 500):
         print(f"\n📦 Arquivo combinado: {combined_file}")
     
     print("\n💾 Para baixar resultados:")
-    print("   modal volume get xavier-data results/xavier_rs ./local_results/")
+    print("   modal volume get xavier-data results/xavier_brazil ./local_results/")
     
     return {
         'total_duration': total_duration,

@@ -26,12 +26,18 @@ modal volume create xavier-data 2>/dev/null || echo "   Volume já existe"
 
 # Upload dados XAVIER
 echo "📤 Upload dados XAVIER..."
-if [ -f "data/processed/xavier_monthly/pr_monthly_1961_2019_RS_combined.nc" ]; then
+if [ -f "data/processed/xavier_monthly/pr_monthly_1961_2019_BRAZIL_combined.nc" ]; then
+    modal volume put xavier-data \
+        data/processed/xavier_monthly/pr_monthly_1961_2019_BRAZIL_combined.nc \
+        /input/pr_monthly_1961_2019_BRAZIL_combined.nc --force 2>/dev/null || echo "   ✓ Dados XAVIER já existem"
+elif [ -f "data/processed/xavier_monthly/pr_monthly_1961_2019_RS_combined.nc" ]; then
+    echo "   ⚠️  Usando dados do RS (Brasil completo não encontrado)"
     modal volume put xavier-data \
         data/processed/xavier_monthly/pr_monthly_1961_2019_RS_combined.nc \
-        /input/pr_monthly_1961_2019_RS_combined.nc --force 2>/dev/null || echo "   ✓ Dados XAVIER já existem"
+        /input/pr_monthly_1961_2019_BRAZIL_combined.nc --force 2>/dev/null || echo "   ✓ Dados já existem"
 else
-    echo "   ⚠️  Arquivo não encontrado: data/processed/xavier_monthly/pr_monthly_1961_2019_RS_combined.nc"
+    echo "   ⚠️  Nenhum arquivo XAVIER encontrado"
+    echo "   Procure por: pr_monthly_1961_2019_BRAZIL_combined.nc ou pr_monthly_1961_2019_RS_combined.nc"
     exit 1
 fi
 
@@ -58,8 +64,8 @@ echo ""
 echo "=========================================="
 echo "💾 Baixando resultados..."
 echo "=========================================="
-mkdir -p results/modal_xavier_rs
-modal volume get xavier-data results/xavier_rs results/modal_xavier_rs/ 2>/dev/null || echo "   ⚠️  Nenhum resultado para baixar ainda"
+mkdir -p results/modal_xavier_brazil
+modal volume get xavier-data results/xavier_brazil results/modal_xavier_brazil/ 2>/dev/null || echo "   ⚠️  Nenhum resultado para baixar ainda"
 
 echo ""
 echo "=========================================="
