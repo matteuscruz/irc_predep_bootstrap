@@ -174,8 +174,9 @@ def plot_13x4_all_lags(ds, mov_index, output_dir, seasons=['DJF', 'MAM', 'JJA', 
     cmap = plt.cm.jet
     norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
     
+    n_lags = ds.dims['lag']
     im = None
-    for lag in range(13):
+    for lag in range(n_lags):
         for col_idx, (season_idx, season) in enumerate(valid_seasons):
             ax = fig.add_subplot(gs[lag, col_idx])
             data = ds['predep_alpha'].isel(mov=0, season=season_idx, lag=lag).values

@@ -38,9 +38,14 @@ venv.bak/
 *~
 
 # Data
-data/
+data/raw/*/
+data/processed/*/
+!data/raw/mov_indices/*.csv
+!data/input/*.csv
 !data/.gitkeep
 !data/README.md
+# Excluir NetCDF grandes
+*.nc
 
 # Results
 results/**/*.nc
