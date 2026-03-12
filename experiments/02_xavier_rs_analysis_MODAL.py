@@ -95,7 +95,7 @@ def _compute_lag_worker(args):
     timeout=3600 * 12,
     volumes={"/data": volume}
 )
-def process_season(season: str, n_boot: int = 500):
+def process_season(season: str, n_boot: int = 2000):
     """Processa um trimestre em container isolado com 8 CPUs."""
     import pandas as pd
     import xarray as xr
@@ -342,7 +342,7 @@ def upload_input_files():
 
 
 @app.local_entrypoint()
-def main(n_boot: int = 500):
+def main(n_boot: int = 2000):
     """Executa análise paralela no Modal."""
     from datetime import datetime
     import time

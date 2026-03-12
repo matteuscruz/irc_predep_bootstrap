@@ -134,7 +134,7 @@ def plot_4x4_optimal_lags(ds, mov_index, output_dir, seasons=['DJF', 'MAM', 'JJA
     return output_file
 
 
-def plot_13x4_all_lags(ds, mov_index, output_dir, seasons=['DJF', 'MAM', 'JJA', 'SON']):
+def plot_12x4_all_lags(ds, mov_index, output_dir, seasons=['DJF', 'MAM', 'JJA', 'SON']):
     """
     Plot 13x4: Todos os lags.
     Conforme especificações de plot_2.md.
@@ -211,7 +211,7 @@ def plot_13x4_all_lags(ds, mov_index, output_dir, seasons=['DJF', 'MAM', 'JJA', 
         fontsize=14, fontweight='bold', y=0.99
     )
     
-    output_file = output_dir / f"predep_13x4_grid_{mov_index}.png"
+    output_file = output_dir / f"predep_12x4_grid_{mov_index}.png"
     plt.savefig(output_file, dpi=200, bbox_inches='tight')
     plt.close()
     
