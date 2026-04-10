@@ -1,0 +1,1054 @@
+cluster,mov,lag,alpha,n_pts,n_valid
+Canoas,ATL3,0,0.056026,126,708
+Canoas,ATL3,1,0.033501,126,708
+Canoas,ATL3,2,0.064926,126,708
+Canoas,ATL3,3,0.017058,126,708
+Canoas,ATL3,4,0.029238,126,708
+Canoas,ATL3,5,0.020400,126,708
+Canoas,ATL3,6,0.001479,126,708
+Canoas,ATL3,7,0.034192,126,708
+Canoas,ATL3,8,0.071202,126,708
+Canoas,ATL3,9,0.057964,126,708
+Canoas,ATL3,10,0.071305,126,708
+Canoas,ATL3,11,-0.039134,126,708
+Canoas,ATL3,12,0.022961,126,708
+Canoas,NAO,0,0.003939,126,708
+Canoas,NAO,1,0.042407,126,708
+Canoas,NAO,2,0.052518,126,708
+Canoas,NAO,3,0.064950,126,708
+Canoas,NAO,4,0.004465,126,708
+Canoas,NAO,5,0.048950,126,708
+Canoas,NAO,6,0.015787,126,708
+Canoas,NAO,7,0.047241,126,708
+Canoas,NAO,8,-0.020125,126,708
+Canoas,NAO,9,0.050652,126,708
+Canoas,NAO,10,-0.023081,126,708
+Canoas,NAO,11,0.026578,126,708
+Canoas,NAO,12,0.022818,126,708
+Canoas,PDO,0,0.028768,126,708
+Canoas,PDO,1,0.013448,126,708
+Canoas,PDO,2,0.011610,126,708
+Canoas,PDO,3,0.042122,126,708
+Canoas,PDO,4,0.031994,126,708
+Canoas,PDO,5,0.013601,126,708
+Canoas,PDO,6,0.013809,126,708
+Canoas,PDO,7,-0.005030,126,708
+Canoas,PDO,8,0.052251,126,708
+Canoas,PDO,9,0.042827,126,708
+Canoas,PDO,10,0.046744,126,708
+Canoas,PDO,11,0.028182,126,708
+Canoas,PDO,12,0.030110,126,708
+Canoas,AMO,0,0.058545,126,708
+Canoas,AMO,1,0.063315,126,708
+Canoas,AMO,2,-0.000910,126,708
+Canoas,AMO,3,0.017874,126,708
+Canoas,AMO,4,0.031765,126,708
+Canoas,AMO,5,-0.003571,126,708
+Canoas,AMO,6,0.065130,126,708
+Canoas,AMO,7,0.044773,126,708
+Canoas,AMO,8,0.011352,126,708
+Canoas,AMO,9,0.017719,126,708
+Canoas,AMO,10,0.012880,126,708
+Canoas,AMO,11,0.004649,126,708
+Canoas,AMO,12,0.006360,126,708
+Canoas,ENSO,0,0.049196,126,708
+Canoas,ENSO,1,0.047480,126,708
+Canoas,ENSO,2,0.119505,126,708
+Canoas,ENSO,3,0.058422,126,708
+Canoas,ENSO,4,0.014016,126,708
+Canoas,ENSO,5,0.009912,126,708
+Canoas,ENSO,6,0.000276,126,708
+Canoas,ENSO,7,0.150560,126,708
+Canoas,ENSO,8,0.133213,126,708
+Canoas,ENSO,9,0.007725,126,708
+Canoas,ENSO,10,0.010572,126,708
+Canoas,ENSO,11,0.282981,126,708
+Canoas,ENSO,12,0.018532,126,708
+Canoas,IOD,0,,126,708
+Canoas,IOD,1,,126,708
+Canoas,IOD,2,0.037170,126,708
+Canoas,IOD,3,,126,708
+Canoas,IOD,4,,126,708
+Canoas,IOD,5,0.013679,126,708
+Canoas,IOD,6,0.062945,126,708
+Canoas,IOD,7,,126,708
+Canoas,IOD,8,,126,708
+Canoas,IOD,9,,126,708
+Canoas,IOD,10,,126,708
+Canoas,IOD,11,,126,708
+Canoas,IOD,12,0.061276,126,708
+Canoas,SAM,0,0.010121,126,492
+Canoas,SAM,1,0.009918,126,491
+Canoas,SAM,2,0.007001,126,490
+Canoas,SAM,3,0.030796,126,489
+Canoas,SAM,4,0.078228,126,488
+Canoas,SAM,5,0.052591,126,487
+Canoas,SAM,6,-0.065290,126,486
+Canoas,SAM,7,0.000157,126,485
+Canoas,SAM,8,0.071551,126,484
+Canoas,SAM,9,0.010879,126,483
+Canoas,SAM,10,0.036198,126,482
+Canoas,SAM,11,0.074851,126,481
+Canoas,SAM,12,-0.013909,126,480
+Canoas,TNA,0,0.040600,126,708
+Canoas,TNA,1,0.039700,126,708
+Canoas,TNA,2,0.027227,126,708
+Canoas,TNA,3,0.057387,126,708
+Canoas,TNA,4,0.027274,126,708
+Canoas,TNA,5,0.005021,126,708
+Canoas,TNA,6,0.008199,126,708
+Canoas,TNA,7,0.014923,126,708
+Canoas,TNA,8,-0.003695,126,708
+Canoas,TNA,9,-0.032111,126,708
+Canoas,TNA,10,-0.023084,126,708
+Canoas,TNA,11,0.001244,126,708
+Canoas,TNA,12,-0.020213,126,708
+Canoas,TSA,0,0.024934,126,708
+Canoas,TSA,1,-0.002558,126,708
+Canoas,TSA,2,0.022885,126,708
+Canoas,TSA,3,0.037436,126,708
+Canoas,TSA,4,0.014623,126,708
+Canoas,TSA,5,0.009945,126,708
+Canoas,TSA,6,0.035131,126,708
+Canoas,TSA,7,0.033042,126,708
+Canoas,TSA,8,-0.067641,126,708
+Canoas,TSA,9,-0.008754,126,708
+Canoas,TSA,10,-0.014867,126,708
+Canoas,TSA,11,-0.004770,126,708
+Canoas,TSA,12,-0.017188,126,708
+"Uruguai, Inhanduva, Peixe e outros",ATL3,0,0.051634,116,708
+"Uruguai, Inhanduva, Peixe e outros",ATL3,1,0.011799,116,708
+"Uruguai, Inhanduva, Peixe e outros",ATL3,2,0.043047,116,708
+"Uruguai, Inhanduva, Peixe e outros",ATL3,3,0.041550,116,708
+"Uruguai, Inhanduva, Peixe e outros",ATL3,4,0.000749,116,708
+"Uruguai, Inhanduva, Peixe e outros",ATL3,5,-0.011424,116,708
+"Uruguai, Inhanduva, Peixe e outros",ATL3,6,-0.025967,116,708
+"Uruguai, Inhanduva, Peixe e outros",ATL3,7,0.040853,116,708
+"Uruguai, Inhanduva, Peixe e outros",ATL3,8,-0.002277,116,708
+"Uruguai, Inhanduva, Peixe e outros",ATL3,9,0.050503,116,708
+"Uruguai, Inhanduva, Peixe e outros",ATL3,10,0.047186,116,708
+"Uruguai, Inhanduva, Peixe e outros",ATL3,11,-0.006793,116,708
+"Uruguai, Inhanduva, Peixe e outros",ATL3,12,0.020906,116,708
+"Uruguai, Inhanduva, Peixe e outros",NAO,0,0.008912,116,708
+"Uruguai, Inhanduva, Peixe e outros",NAO,1,0.026844,116,708
+"Uruguai, Inhanduva, Peixe e outros",NAO,2,0.047144,116,708
+"Uruguai, Inhanduva, Peixe e outros",NAO,3,0.046692,116,708
+"Uruguai, Inhanduva, Peixe e outros",NAO,4,0.019511,116,708
+"Uruguai, Inhanduva, Peixe e outros",NAO,5,0.041001,116,708
+"Uruguai, Inhanduva, Peixe e outros",NAO,6,0.029341,116,708
+"Uruguai, Inhanduva, Peixe e outros",NAO,7,0.048694,116,708
+"Uruguai, Inhanduva, Peixe e outros",NAO,8,-0.045255,116,708
+"Uruguai, Inhanduva, Peixe e outros",NAO,9,-0.058180,116,708
+"Uruguai, Inhanduva, Peixe e outros",NAO,10,-0.068836,116,708
+"Uruguai, Inhanduva, Peixe e outros",NAO,11,-0.063343,116,708
+"Uruguai, Inhanduva, Peixe e outros",NAO,12,0.027738,116,708
+"Uruguai, Inhanduva, Peixe e outros",PDO,0,0.031810,116,708
+"Uruguai, Inhanduva, Peixe e outros",PDO,1,0.024461,116,708
+"Uruguai, Inhanduva, Peixe e outros",PDO,2,0.041232,116,708
+"Uruguai, Inhanduva, Peixe e outros",PDO,3,0.043614,116,708
+"Uruguai, Inhanduva, Peixe e outros",PDO,4,0.031253,116,708
+"Uruguai, Inhanduva, Peixe e outros",PDO,5,0.051739,116,708
+"Uruguai, Inhanduva, Peixe e outros",PDO,6,0.014211,116,708
+"Uruguai, Inhanduva, Peixe e outros",PDO,7,0.028974,116,708
+"Uruguai, Inhanduva, Peixe e outros",PDO,8,0.009644,116,708
+"Uruguai, Inhanduva, Peixe e outros",PDO,9,0.031818,116,708
+"Uruguai, Inhanduva, Peixe e outros",PDO,10,0.019478,116,708
+"Uruguai, Inhanduva, Peixe e outros",PDO,11,0.022869,116,708
+"Uruguai, Inhanduva, Peixe e outros",PDO,12,0.023055,116,708
+"Uruguai, Inhanduva, Peixe e outros",AMO,0,0.015566,116,708
+"Uruguai, Inhanduva, Peixe e outros",AMO,1,0.026909,116,708
+"Uruguai, Inhanduva, Peixe e outros",AMO,2,-0.005828,116,708
+"Uruguai, Inhanduva, Peixe e outros",AMO,3,0.016085,116,708
+"Uruguai, Inhanduva, Peixe e outros",AMO,4,0.024901,116,708
+"Uruguai, Inhanduva, Peixe e outros",AMO,5,0.008096,116,708
+"Uruguai, Inhanduva, Peixe e outros",AMO,6,0.022442,116,708
+"Uruguai, Inhanduva, Peixe e outros",AMO,7,0.009611,116,708
+"Uruguai, Inhanduva, Peixe e outros",AMO,8,-0.008838,116,708
+"Uruguai, Inhanduva, Peixe e outros",AMO,9,0.025962,116,708
+"Uruguai, Inhanduva, Peixe e outros",AMO,10,0.004139,116,708
+"Uruguai, Inhanduva, Peixe e outros",AMO,11,0.016834,116,708
+"Uruguai, Inhanduva, Peixe e outros",AMO,12,0.010264,116,708
+"Uruguai, Inhanduva, Peixe e outros",ENSO,0,0.048005,116,708
+"Uruguai, Inhanduva, Peixe e outros",ENSO,1,0.057791,116,708
+"Uruguai, Inhanduva, Peixe e outros",ENSO,2,0.110107,116,708
+"Uruguai, Inhanduva, Peixe e outros",ENSO,3,0.037683,116,708
+"Uruguai, Inhanduva, Peixe e outros",ENSO,4,0.038951,116,708
+"Uruguai, Inhanduva, Peixe e outros",ENSO,5,0.014077,116,708
+"Uruguai, Inhanduva, Peixe e outros",ENSO,6,0.017735,116,708
+"Uruguai, Inhanduva, Peixe e outros",ENSO,7,0.028339,116,708
+"Uruguai, Inhanduva, Peixe e outros",ENSO,8,0.035130,116,708
+"Uruguai, Inhanduva, Peixe e outros",ENSO,9,-0.004671,116,708
+"Uruguai, Inhanduva, Peixe e outros",ENSO,10,0.011214,116,708
+"Uruguai, Inhanduva, Peixe e outros",ENSO,11,0.071955,116,708
+"Uruguai, Inhanduva, Peixe e outros",ENSO,12,-0.017568,116,708
+"Uruguai, Inhanduva, Peixe e outros",IOD,0,,116,708
+"Uruguai, Inhanduva, Peixe e outros",IOD,1,,116,708
+"Uruguai, Inhanduva, Peixe e outros",IOD,2,0.035042,116,708
+"Uruguai, Inhanduva, Peixe e outros",IOD,3,,116,708
+"Uruguai, Inhanduva, Peixe e outros",IOD,4,,116,708
+"Uruguai, Inhanduva, Peixe e outros",IOD,5,0.003534,116,708
+"Uruguai, Inhanduva, Peixe e outros",IOD,6,0.067876,116,708
+"Uruguai, Inhanduva, Peixe e outros",IOD,7,,116,708
+"Uruguai, Inhanduva, Peixe e outros",IOD,8,,116,708
+"Uruguai, Inhanduva, Peixe e outros",IOD,9,,116,708
+"Uruguai, Inhanduva, Peixe e outros",IOD,10,,116,708
+"Uruguai, Inhanduva, Peixe e outros",IOD,11,,116,708
+"Uruguai, Inhanduva, Peixe e outros",IOD,12,0.090548,116,708
+"Uruguai, Inhanduva, Peixe e outros",SAM,0,0.056233,116,492
+"Uruguai, Inhanduva, Peixe e outros",SAM,1,0.037160,116,491
+"Uruguai, Inhanduva, Peixe e outros",SAM,2,0.010695,116,490
+"Uruguai, Inhanduva, Peixe e outros",SAM,3,0.024018,116,489
+"Uruguai, Inhanduva, Peixe e outros",SAM,4,0.071976,116,488
+"Uruguai, Inhanduva, Peixe e outros",SAM,5,0.008902,116,487
+"Uruguai, Inhanduva, Peixe e outros",SAM,6,-0.029176,116,486
+"Uruguai, Inhanduva, Peixe e outros",SAM,7,-0.022289,116,485
+"Uruguai, Inhanduva, Peixe e outros",SAM,8,0.042545,116,484
+"Uruguai, Inhanduva, Peixe e outros",SAM,9,-0.031734,116,483
+"Uruguai, Inhanduva, Peixe e outros",SAM,10,-0.061925,116,482
+"Uruguai, Inhanduva, Peixe e outros",SAM,11,0.070758,116,481
+"Uruguai, Inhanduva, Peixe e outros",SAM,12,0.034419,116,480
+"Uruguai, Inhanduva, Peixe e outros",TNA,0,0.081416,116,708
+"Uruguai, Inhanduva, Peixe e outros",TNA,1,0.053144,116,708
+"Uruguai, Inhanduva, Peixe e outros",TNA,2,0.046681,116,708
+"Uruguai, Inhanduva, Peixe e outros",TNA,3,0.067646,116,708
+"Uruguai, Inhanduva, Peixe e outros",TNA,4,0.020648,116,708
+"Uruguai, Inhanduva, Peixe e outros",TNA,5,0.020956,116,708
+"Uruguai, Inhanduva, Peixe e outros",TNA,6,0.032188,116,708
+"Uruguai, Inhanduva, Peixe e outros",TNA,7,0.037850,116,708
+"Uruguai, Inhanduva, Peixe e outros",TNA,8,-0.010088,116,708
+"Uruguai, Inhanduva, Peixe e outros",TNA,9,-0.024537,116,708
+"Uruguai, Inhanduva, Peixe e outros",TNA,10,-0.018953,116,708
+"Uruguai, Inhanduva, Peixe e outros",TNA,11,0.021422,116,708
+"Uruguai, Inhanduva, Peixe e outros",TNA,12,0.012967,116,708
+"Uruguai, Inhanduva, Peixe e outros",TSA,0,0.005302,116,708
+"Uruguai, Inhanduva, Peixe e outros",TSA,1,0.029678,116,708
+"Uruguai, Inhanduva, Peixe e outros",TSA,2,0.026874,116,708
+"Uruguai, Inhanduva, Peixe e outros",TSA,3,0.018405,116,708
+"Uruguai, Inhanduva, Peixe e outros",TSA,4,0.014197,116,708
+"Uruguai, Inhanduva, Peixe e outros",TSA,5,0.001548,116,708
+"Uruguai, Inhanduva, Peixe e outros",TSA,6,0.029652,116,708
+"Uruguai, Inhanduva, Peixe e outros",TSA,7,0.022081,116,708
+"Uruguai, Inhanduva, Peixe e outros",TSA,8,-0.047110,116,708
+"Uruguai, Inhanduva, Peixe e outros",TSA,9,0.035323,116,708
+"Uruguai, Inhanduva, Peixe e outros",TSA,10,0.066307,116,708
+"Uruguai, Inhanduva, Peixe e outros",TSA,11,0.010342,116,708
+"Uruguai, Inhanduva, Peixe e outros",TSA,12,0.022201,116,708
+Pelotas,ATL3,0,0.078910,130,708
+Pelotas,ATL3,1,0.035282,130,708
+Pelotas,ATL3,2,0.073285,130,708
+Pelotas,ATL3,3,0.028434,130,708
+Pelotas,ATL3,4,0.031522,130,708
+Pelotas,ATL3,5,0.024974,130,708
+Pelotas,ATL3,6,0.013383,130,708
+Pelotas,ATL3,7,0.049229,130,708
+Pelotas,ATL3,8,0.019288,130,708
+Pelotas,ATL3,9,0.037827,130,708
+Pelotas,ATL3,10,0.014599,130,708
+Pelotas,ATL3,11,-0.003998,130,708
+Pelotas,ATL3,12,0.031212,130,708
+Pelotas,NAO,0,0.043047,130,708
+Pelotas,NAO,1,0.046379,130,708
+Pelotas,NAO,2,0.058190,130,708
+Pelotas,NAO,3,0.059086,130,708
+Pelotas,NAO,4,0.036595,130,708
+Pelotas,NAO,5,0.045873,130,708
+Pelotas,NAO,6,0.029249,130,708
+Pelotas,NAO,7,0.065123,130,708
+Pelotas,NAO,8,0.042195,130,708
+Pelotas,NAO,9,0.041835,130,708
+Pelotas,NAO,10,0.000488,130,708
+Pelotas,NAO,11,0.012169,130,708
+Pelotas,NAO,12,0.047314,130,708
+Pelotas,PDO,0,0.036642,130,708
+Pelotas,PDO,1,0.072847,130,708
+Pelotas,PDO,2,0.043107,130,708
+Pelotas,PDO,3,0.063549,130,708
+Pelotas,PDO,4,0.026856,130,708
+Pelotas,PDO,5,0.032496,130,708
+Pelotas,PDO,6,0.016338,130,708
+Pelotas,PDO,7,0.024685,130,708
+Pelotas,PDO,8,0.043486,130,708
+Pelotas,PDO,9,0.064069,130,708
+Pelotas,PDO,10,0.054020,130,708
+Pelotas,PDO,11,0.041899,130,708
+Pelotas,PDO,12,0.020287,130,708
+Pelotas,AMO,0,0.068957,130,708
+Pelotas,AMO,1,0.069544,130,708
+Pelotas,AMO,2,0.052429,130,708
+Pelotas,AMO,3,0.026710,130,708
+Pelotas,AMO,4,0.034073,130,708
+Pelotas,AMO,5,0.031304,130,708
+Pelotas,AMO,6,0.065527,130,708
+Pelotas,AMO,7,0.039014,130,708
+Pelotas,AMO,8,-0.004441,130,708
+Pelotas,AMO,9,0.037088,130,708
+Pelotas,AMO,10,-0.022322,130,708
+Pelotas,AMO,11,0.006015,130,708
+Pelotas,AMO,12,0.009523,130,708
+Pelotas,ENSO,0,0.062902,130,708
+Pelotas,ENSO,1,0.063974,130,708
+Pelotas,ENSO,2,0.279129,130,708
+Pelotas,ENSO,3,0.063979,130,708
+Pelotas,ENSO,4,0.075931,130,708
+Pelotas,ENSO,5,0.030989,130,708
+Pelotas,ENSO,6,0.050999,130,708
+Pelotas,ENSO,7,0.041493,130,708
+Pelotas,ENSO,8,0.102334,130,708
+Pelotas,ENSO,9,0.054041,130,708
+Pelotas,ENSO,10,0.109526,130,708
+Pelotas,ENSO,11,0.100745,130,708
+Pelotas,ENSO,12,0.013612,130,708
+Pelotas,IOD,0,,130,708
+Pelotas,IOD,1,,130,708
+Pelotas,IOD,2,0.059985,130,708
+Pelotas,IOD,3,,130,708
+Pelotas,IOD,4,,130,708
+Pelotas,IOD,5,0.022172,130,708
+Pelotas,IOD,6,0.091057,130,708
+Pelotas,IOD,7,,130,708
+Pelotas,IOD,8,,130,708
+Pelotas,IOD,9,,130,708
+Pelotas,IOD,10,,130,708
+Pelotas,IOD,11,,130,708
+Pelotas,IOD,12,0.035665,130,708
+Pelotas,SAM,0,0.065484,130,492
+Pelotas,SAM,1,0.005218,130,491
+Pelotas,SAM,2,0.013876,130,490
+Pelotas,SAM,3,0.003101,130,489
+Pelotas,SAM,4,0.071670,130,488
+Pelotas,SAM,5,0.037254,130,487
+Pelotas,SAM,6,-0.010859,130,486
+Pelotas,SAM,7,0.010054,130,485
+Pelotas,SAM,8,0.038984,130,484
+Pelotas,SAM,9,-0.019944,130,483
+Pelotas,SAM,10,-0.080883,130,482
+Pelotas,SAM,11,0.100787,130,481
+Pelotas,SAM,12,0.039573,130,480
+Pelotas,TNA,0,0.023113,130,708
+Pelotas,TNA,1,0.015774,130,708
+Pelotas,TNA,2,0.021247,130,708
+Pelotas,TNA,3,0.046005,130,708
+Pelotas,TNA,4,0.035420,130,708
+Pelotas,TNA,5,0.016535,130,708
+Pelotas,TNA,6,0.030042,130,708
+Pelotas,TNA,7,0.014099,130,708
+Pelotas,TNA,8,0.030041,130,708
+Pelotas,TNA,9,0.014203,130,708
+Pelotas,TNA,10,0.027503,130,708
+Pelotas,TNA,11,0.046548,130,708
+Pelotas,TNA,12,0.049671,130,708
+Pelotas,TSA,0,0.050440,130,708
+Pelotas,TSA,1,0.043254,130,708
+Pelotas,TSA,2,0.006014,130,708
+Pelotas,TSA,3,0.064107,130,708
+Pelotas,TSA,4,0.036613,130,708
+Pelotas,TSA,5,0.028418,130,708
+Pelotas,TSA,6,0.056436,130,708
+Pelotas,TSA,7,0.030032,130,708
+Pelotas,TSA,8,-0.028529,130,708
+Pelotas,TSA,9,-0.002151,130,708
+Pelotas,TSA,10,0.012126,130,708
+Pelotas,TSA,11,0.010347,130,708
+Pelotas,TSA,12,-0.019824,130,708
+"Uruguai, Ijuí, Piratinim e outros",ATL3,0,-0.010036,250,708
+"Uruguai, Ijuí, Piratinim e outros",ATL3,1,-0.014468,250,708
+"Uruguai, Ijuí, Piratinim e outros",ATL3,2,0.011051,250,708
+"Uruguai, Ijuí, Piratinim e outros",ATL3,3,-0.018500,250,708
+"Uruguai, Ijuí, Piratinim e outros",ATL3,4,0.014122,250,708
+"Uruguai, Ijuí, Piratinim e outros",ATL3,5,-0.000878,250,708
+"Uruguai, Ijuí, Piratinim e outros",ATL3,6,0.012763,250,708
+"Uruguai, Ijuí, Piratinim e outros",ATL3,7,0.025112,250,708
+"Uruguai, Ijuí, Piratinim e outros",ATL3,8,0.054554,250,708
+"Uruguai, Ijuí, Piratinim e outros",ATL3,9,0.026349,250,708
+"Uruguai, Ijuí, Piratinim e outros",ATL3,10,0.037156,250,708
+"Uruguai, Ijuí, Piratinim e outros",ATL3,11,0.068239,250,708
+"Uruguai, Ijuí, Piratinim e outros",ATL3,12,0.049059,250,708
+"Uruguai, Ijuí, Piratinim e outros",NAO,0,-0.003810,250,708
+"Uruguai, Ijuí, Piratinim e outros",NAO,1,0.044183,250,708
+"Uruguai, Ijuí, Piratinim e outros",NAO,2,0.038659,250,708
+"Uruguai, Ijuí, Piratinim e outros",NAO,3,0.030833,250,708
+"Uruguai, Ijuí, Piratinim e outros",NAO,4,0.018158,250,708
+"Uruguai, Ijuí, Piratinim e outros",NAO,5,0.028585,250,708
+"Uruguai, Ijuí, Piratinim e outros",NAO,6,0.006219,250,708
+"Uruguai, Ijuí, Piratinim e outros",NAO,7,0.032597,250,708
+"Uruguai, Ijuí, Piratinim e outros",NAO,8,-0.020145,250,708
+"Uruguai, Ijuí, Piratinim e outros",NAO,9,-0.031284,250,708
+"Uruguai, Ijuí, Piratinim e outros",NAO,10,-0.017948,250,708
+"Uruguai, Ijuí, Piratinim e outros",NAO,11,-0.000128,250,708
+"Uruguai, Ijuí, Piratinim e outros",NAO,12,0.065338,250,708
+"Uruguai, Ijuí, Piratinim e outros",PDO,0,0.000589,250,708
+"Uruguai, Ijuí, Piratinim e outros",PDO,1,0.001818,250,708
+"Uruguai, Ijuí, Piratinim e outros",PDO,2,0.005125,250,708
+"Uruguai, Ijuí, Piratinim e outros",PDO,3,0.030173,250,708
+"Uruguai, Ijuí, Piratinim e outros",PDO,4,0.029670,250,708
+"Uruguai, Ijuí, Piratinim e outros",PDO,5,0.020138,250,708
+"Uruguai, Ijuí, Piratinim e outros",PDO,6,0.006435,250,708
+"Uruguai, Ijuí, Piratinim e outros",PDO,7,0.001651,250,708
+"Uruguai, Ijuí, Piratinim e outros",PDO,8,0.067762,250,708
+"Uruguai, Ijuí, Piratinim e outros",PDO,9,0.100863,250,708
+"Uruguai, Ijuí, Piratinim e outros",PDO,10,0.081943,250,708
+"Uruguai, Ijuí, Piratinim e outros",PDO,11,0.084138,250,708
+"Uruguai, Ijuí, Piratinim e outros",PDO,12,0.067416,250,708
+"Uruguai, Ijuí, Piratinim e outros",AMO,0,-0.006588,250,708
+"Uruguai, Ijuí, Piratinim e outros",AMO,1,0.006927,250,708
+"Uruguai, Ijuí, Piratinim e outros",AMO,2,0.007960,250,708
+"Uruguai, Ijuí, Piratinim e outros",AMO,3,0.016575,250,708
+"Uruguai, Ijuí, Piratinim e outros",AMO,4,0.014212,250,708
+"Uruguai, Ijuí, Piratinim e outros",AMO,5,0.051956,250,708
+"Uruguai, Ijuí, Piratinim e outros",AMO,6,0.074312,250,708
+"Uruguai, Ijuí, Piratinim e outros",AMO,7,0.001672,250,708
+"Uruguai, Ijuí, Piratinim e outros",AMO,8,0.070703,250,708
+"Uruguai, Ijuí, Piratinim e outros",AMO,9,0.065467,250,708
+"Uruguai, Ijuí, Piratinim e outros",AMO,10,0.043998,250,708
+"Uruguai, Ijuí, Piratinim e outros",AMO,11,0.054901,250,708
+"Uruguai, Ijuí, Piratinim e outros",AMO,12,-0.002037,250,708
+"Uruguai, Ijuí, Piratinim e outros",ENSO,0,0.015266,250,708
+"Uruguai, Ijuí, Piratinim e outros",ENSO,1,0.034971,250,708
+"Uruguai, Ijuí, Piratinim e outros",ENSO,2,0.047058,250,708
+"Uruguai, Ijuí, Piratinim e outros",ENSO,3,0.056510,250,708
+"Uruguai, Ijuí, Piratinim e outros",ENSO,4,0.244967,250,708
+"Uruguai, Ijuí, Piratinim e outros",ENSO,5,-0.000911,250,708
+"Uruguai, Ijuí, Piratinim e outros",ENSO,6,0.005398,250,708
+"Uruguai, Ijuí, Piratinim e outros",ENSO,7,0.309987,250,708
+"Uruguai, Ijuí, Piratinim e outros",ENSO,8,0.013340,250,708
+"Uruguai, Ijuí, Piratinim e outros",ENSO,9,0.010908,250,708
+"Uruguai, Ijuí, Piratinim e outros",ENSO,10,-0.060264,250,708
+"Uruguai, Ijuí, Piratinim e outros",ENSO,11,-0.027041,250,708
+"Uruguai, Ijuí, Piratinim e outros",ENSO,12,-0.042962,250,708
+"Uruguai, Ijuí, Piratinim e outros",IOD,0,,250,708
+"Uruguai, Ijuí, Piratinim e outros",IOD,1,,250,708
+"Uruguai, Ijuí, Piratinim e outros",IOD,2,0.018780,250,708
+"Uruguai, Ijuí, Piratinim e outros",IOD,3,,250,708
+"Uruguai, Ijuí, Piratinim e outros",IOD,4,,250,708
+"Uruguai, Ijuí, Piratinim e outros",IOD,5,0.005481,250,708
+"Uruguai, Ijuí, Piratinim e outros",IOD,6,0.046470,250,708
+"Uruguai, Ijuí, Piratinim e outros",IOD,7,,250,708
+"Uruguai, Ijuí, Piratinim e outros",IOD,8,,250,708
+"Uruguai, Ijuí, Piratinim e outros",IOD,9,,250,708
+"Uruguai, Ijuí, Piratinim e outros",IOD,10,,250,708
+"Uruguai, Ijuí, Piratinim e outros",IOD,11,,250,708
+"Uruguai, Ijuí, Piratinim e outros",IOD,12,0.069287,250,708
+"Uruguai, Ijuí, Piratinim e outros",SAM,0,-0.029795,250,492
+"Uruguai, Ijuí, Piratinim e outros",SAM,1,0.026645,250,491
+"Uruguai, Ijuí, Piratinim e outros",SAM,2,0.018142,250,490
+"Uruguai, Ijuí, Piratinim e outros",SAM,3,0.011208,250,489
+"Uruguai, Ijuí, Piratinim e outros",SAM,4,0.003698,250,488
+"Uruguai, Ijuí, Piratinim e outros",SAM,5,-0.025941,250,487
+"Uruguai, Ijuí, Piratinim e outros",SAM,6,-0.036054,250,486
+"Uruguai, Ijuí, Piratinim e outros",SAM,7,-0.001238,250,485
+"Uruguai, Ijuí, Piratinim e outros",SAM,8,0.034247,250,484
+"Uruguai, Ijuí, Piratinim e outros",SAM,9,0.048553,250,483
+"Uruguai, Ijuí, Piratinim e outros",SAM,10,-0.043324,250,482
+"Uruguai, Ijuí, Piratinim e outros",SAM,11,0.082846,250,481
+"Uruguai, Ijuí, Piratinim e outros",SAM,12,0.024949,250,480
+"Uruguai, Ijuí, Piratinim e outros",TNA,0,0.004528,250,708
+"Uruguai, Ijuí, Piratinim e outros",TNA,1,0.005695,250,708
+"Uruguai, Ijuí, Piratinim e outros",TNA,2,0.006600,250,708
+"Uruguai, Ijuí, Piratinim e outros",TNA,3,0.048812,250,708
+"Uruguai, Ijuí, Piratinim e outros",TNA,4,0.027852,250,708
+"Uruguai, Ijuí, Piratinim e outros",TNA,5,0.014746,250,708
+"Uruguai, Ijuí, Piratinim e outros",TNA,6,0.013063,250,708
+"Uruguai, Ijuí, Piratinim e outros",TNA,7,0.012699,250,708
+"Uruguai, Ijuí, Piratinim e outros",TNA,8,0.021931,250,708
+"Uruguai, Ijuí, Piratinim e outros",TNA,9,0.066594,250,708
+"Uruguai, Ijuí, Piratinim e outros",TNA,10,-0.009411,250,708
+"Uruguai, Ijuí, Piratinim e outros",TNA,11,-0.017942,250,708
+"Uruguai, Ijuí, Piratinim e outros",TNA,12,0.002795,250,708
+"Uruguai, Ijuí, Piratinim e outros",TSA,0,0.026500,250,708
+"Uruguai, Ijuí, Piratinim e outros",TSA,1,-0.000515,250,708
+"Uruguai, Ijuí, Piratinim e outros",TSA,2,0.010578,250,708
+"Uruguai, Ijuí, Piratinim e outros",TSA,3,0.011125,250,708
+"Uruguai, Ijuí, Piratinim e outros",TSA,4,0.010592,250,708
+"Uruguai, Ijuí, Piratinim e outros",TSA,5,-0.000497,250,708
+"Uruguai, Ijuí, Piratinim e outros",TSA,6,0.029286,250,708
+"Uruguai, Ijuí, Piratinim e outros",TSA,7,0.004719,250,708
+"Uruguai, Ijuí, Piratinim e outros",TSA,8,-0.008433,250,708
+"Uruguai, Ijuí, Piratinim e outros",TSA,9,0.030961,250,708
+"Uruguai, Ijuí, Piratinim e outros",TSA,10,0.054554,250,708
+"Uruguai, Ijuí, Piratinim e outros",TSA,11,-0.020282,250,708
+"Uruguai, Ijuí, Piratinim e outros",TSA,12,0.021555,250,708
+"Uruguai, Quaraí (M. D.) e outros",ATL3,0,0.022019,95,708
+"Uruguai, Quaraí (M. D.) e outros",ATL3,1,0.014801,95,708
+"Uruguai, Quaraí (M. D.) e outros",ATL3,2,0.017764,95,708
+"Uruguai, Quaraí (M. D.) e outros",ATL3,3,0.028389,95,708
+"Uruguai, Quaraí (M. D.) e outros",ATL3,4,0.040098,95,708
+"Uruguai, Quaraí (M. D.) e outros",ATL3,5,0.020040,95,708
+"Uruguai, Quaraí (M. D.) e outros",ATL3,6,0.037817,95,708
+"Uruguai, Quaraí (M. D.) e outros",ATL3,7,0.021122,95,708
+"Uruguai, Quaraí (M. D.) e outros",ATL3,8,0.006008,95,708
+"Uruguai, Quaraí (M. D.) e outros",ATL3,9,0.091623,95,708
+"Uruguai, Quaraí (M. D.) e outros",ATL3,10,0.026730,95,708
+"Uruguai, Quaraí (M. D.) e outros",ATL3,11,0.025228,95,708
+"Uruguai, Quaraí (M. D.) e outros",ATL3,12,0.034585,95,708
+"Uruguai, Quaraí (M. D.) e outros",NAO,0,0.066153,95,708
+"Uruguai, Quaraí (M. D.) e outros",NAO,1,0.048210,95,708
+"Uruguai, Quaraí (M. D.) e outros",NAO,2,0.020302,95,708
+"Uruguai, Quaraí (M. D.) e outros",NAO,3,0.043441,95,708
+"Uruguai, Quaraí (M. D.) e outros",NAO,4,0.040883,95,708
+"Uruguai, Quaraí (M. D.) e outros",NAO,5,0.057230,95,708
+"Uruguai, Quaraí (M. D.) e outros",NAO,6,0.031062,95,708
+"Uruguai, Quaraí (M. D.) e outros",NAO,7,0.033602,95,708
+"Uruguai, Quaraí (M. D.) e outros",NAO,8,-0.058802,95,708
+"Uruguai, Quaraí (M. D.) e outros",NAO,9,-0.010868,95,708
+"Uruguai, Quaraí (M. D.) e outros",NAO,10,-0.014314,95,708
+"Uruguai, Quaraí (M. D.) e outros",NAO,11,-0.025143,95,708
+"Uruguai, Quaraí (M. D.) e outros",NAO,12,-0.033535,95,708
+"Uruguai, Quaraí (M. D.) e outros",PDO,0,0.035129,95,708
+"Uruguai, Quaraí (M. D.) e outros",PDO,1,0.054319,95,708
+"Uruguai, Quaraí (M. D.) e outros",PDO,2,0.078437,95,708
+"Uruguai, Quaraí (M. D.) e outros",PDO,3,0.052879,95,708
+"Uruguai, Quaraí (M. D.) e outros",PDO,4,0.049525,95,708
+"Uruguai, Quaraí (M. D.) e outros",PDO,5,0.036618,95,708
+"Uruguai, Quaraí (M. D.) e outros",PDO,6,0.063504,95,708
+"Uruguai, Quaraí (M. D.) e outros",PDO,7,0.024903,95,708
+"Uruguai, Quaraí (M. D.) e outros",PDO,8,0.046006,95,708
+"Uruguai, Quaraí (M. D.) e outros",PDO,9,0.084235,95,708
+"Uruguai, Quaraí (M. D.) e outros",PDO,10,0.064665,95,708
+"Uruguai, Quaraí (M. D.) e outros",PDO,11,0.072626,95,708
+"Uruguai, Quaraí (M. D.) e outros",PDO,12,0.062988,95,708
+"Uruguai, Quaraí (M. D.) e outros",AMO,0,0.047891,95,708
+"Uruguai, Quaraí (M. D.) e outros",AMO,1,0.040458,95,708
+"Uruguai, Quaraí (M. D.) e outros",AMO,2,0.048915,95,708
+"Uruguai, Quaraí (M. D.) e outros",AMO,3,0.070966,95,708
+"Uruguai, Quaraí (M. D.) e outros",AMO,4,0.068200,95,708
+"Uruguai, Quaraí (M. D.) e outros",AMO,5,0.030534,95,708
+"Uruguai, Quaraí (M. D.) e outros",AMO,6,0.052800,95,708
+"Uruguai, Quaraí (M. D.) e outros",AMO,7,0.058433,95,708
+"Uruguai, Quaraí (M. D.) e outros",AMO,8,0.053246,95,708
+"Uruguai, Quaraí (M. D.) e outros",AMO,9,0.054111,95,708
+"Uruguai, Quaraí (M. D.) e outros",AMO,10,0.078485,95,708
+"Uruguai, Quaraí (M. D.) e outros",AMO,11,0.056207,95,708
+"Uruguai, Quaraí (M. D.) e outros",AMO,12,0.073988,95,708
+"Uruguai, Quaraí (M. D.) e outros",ENSO,0,0.083314,95,708
+"Uruguai, Quaraí (M. D.) e outros",ENSO,1,0.081409,95,708
+"Uruguai, Quaraí (M. D.) e outros",ENSO,2,0.066001,95,708
+"Uruguai, Quaraí (M. D.) e outros",ENSO,3,0.072615,95,708
+"Uruguai, Quaraí (M. D.) e outros",ENSO,4,0.075699,95,708
+"Uruguai, Quaraí (M. D.) e outros",ENSO,5,0.068955,95,708
+"Uruguai, Quaraí (M. D.) e outros",ENSO,6,0.070520,95,708
+"Uruguai, Quaraí (M. D.) e outros",ENSO,7,0.043666,95,708
+"Uruguai, Quaraí (M. D.) e outros",ENSO,8,0.362406,95,708
+"Uruguai, Quaraí (M. D.) e outros",ENSO,9,0.009900,95,708
+"Uruguai, Quaraí (M. D.) e outros",ENSO,10,0.081574,95,708
+"Uruguai, Quaraí (M. D.) e outros",ENSO,11,-0.051852,95,708
+"Uruguai, Quaraí (M. D.) e outros",ENSO,12,-0.087562,95,708
+"Uruguai, Quaraí (M. D.) e outros",IOD,0,,95,708
+"Uruguai, Quaraí (M. D.) e outros",IOD,1,,95,708
+"Uruguai, Quaraí (M. D.) e outros",IOD,2,0.108396,95,708
+"Uruguai, Quaraí (M. D.) e outros",IOD,3,,95,708
+"Uruguai, Quaraí (M. D.) e outros",IOD,4,,95,708
+"Uruguai, Quaraí (M. D.) e outros",IOD,5,0.040521,95,708
+"Uruguai, Quaraí (M. D.) e outros",IOD,6,0.049329,95,708
+"Uruguai, Quaraí (M. D.) e outros",IOD,7,,95,708
+"Uruguai, Quaraí (M. D.) e outros",IOD,8,,95,708
+"Uruguai, Quaraí (M. D.) e outros",IOD,9,,95,708
+"Uruguai, Quaraí (M. D.) e outros",IOD,10,,95,708
+"Uruguai, Quaraí (M. D.) e outros",IOD,11,,95,708
+"Uruguai, Quaraí (M. D.) e outros",IOD,12,0.078416,95,708
+"Uruguai, Quaraí (M. D.) e outros",SAM,0,0.047662,95,492
+"Uruguai, Quaraí (M. D.) e outros",SAM,1,-0.006150,95,491
+"Uruguai, Quaraí (M. D.) e outros",SAM,2,0.012815,95,490
+"Uruguai, Quaraí (M. D.) e outros",SAM,3,0.004033,95,489
+"Uruguai, Quaraí (M. D.) e outros",SAM,4,0.013414,95,488
+"Uruguai, Quaraí (M. D.) e outros",SAM,5,0.040709,95,487
+"Uruguai, Quaraí (M. D.) e outros",SAM,6,-0.028950,95,486
+"Uruguai, Quaraí (M. D.) e outros",SAM,7,0.022619,95,485
+"Uruguai, Quaraí (M. D.) e outros",SAM,8,-0.015063,95,484
+"Uruguai, Quaraí (M. D.) e outros",SAM,9,0.019724,95,483
+"Uruguai, Quaraí (M. D.) e outros",SAM,10,0.102948,95,482
+"Uruguai, Quaraí (M. D.) e outros",SAM,11,0.033934,95,481
+"Uruguai, Quaraí (M. D.) e outros",SAM,12,0.060118,95,480
+"Uruguai, Quaraí (M. D.) e outros",TNA,0,0.019650,95,708
+"Uruguai, Quaraí (M. D.) e outros",TNA,1,0.028061,95,708
+"Uruguai, Quaraí (M. D.) e outros",TNA,2,0.064353,95,708
+"Uruguai, Quaraí (M. D.) e outros",TNA,3,0.066802,95,708
+"Uruguai, Quaraí (M. D.) e outros",TNA,4,0.029804,95,708
+"Uruguai, Quaraí (M. D.) e outros",TNA,5,0.039928,95,708
+"Uruguai, Quaraí (M. D.) e outros",TNA,6,0.021268,95,708
+"Uruguai, Quaraí (M. D.) e outros",TNA,7,0.020650,95,708
+"Uruguai, Quaraí (M. D.) e outros",TNA,8,0.037386,95,708
+"Uruguai, Quaraí (M. D.) e outros",TNA,9,0.009860,95,708
+"Uruguai, Quaraí (M. D.) e outros",TNA,10,0.001273,95,708
+"Uruguai, Quaraí (M. D.) e outros",TNA,11,-0.006509,95,708
+"Uruguai, Quaraí (M. D.) e outros",TNA,12,-0.038381,95,708
+"Uruguai, Quaraí (M. D.) e outros",TSA,0,0.038183,95,708
+"Uruguai, Quaraí (M. D.) e outros",TSA,1,0.036839,95,708
+"Uruguai, Quaraí (M. D.) e outros",TSA,2,0.033705,95,708
+"Uruguai, Quaraí (M. D.) e outros",TSA,3,0.009558,95,708
+"Uruguai, Quaraí (M. D.) e outros",TSA,4,-0.010306,95,708
+"Uruguai, Quaraí (M. D.) e outros",TSA,5,-0.014067,95,708
+"Uruguai, Quaraí (M. D.) e outros",TSA,6,0.040815,95,708
+"Uruguai, Quaraí (M. D.) e outros",TSA,7,0.013756,95,708
+"Uruguai, Quaraí (M. D.) e outros",TSA,8,0.039345,95,708
+"Uruguai, Quaraí (M. D.) e outros",TSA,9,0.054724,95,708
+"Uruguai, Quaraí (M. D.) e outros",TSA,10,0.050361,95,708
+"Uruguai, Quaraí (M. D.) e outros",TSA,11,0.067651,95,708
+"Uruguai, Quaraí (M. D.) e outros",TSA,12,0.049740,95,708
+Ibicuí,ATL3,0,-0.016284,450,708
+Ibicuí,ATL3,1,-0.026904,450,708
+Ibicuí,ATL3,2,-0.005840,450,708
+Ibicuí,ATL3,3,-0.015523,450,708
+Ibicuí,ATL3,4,-0.012312,450,708
+Ibicuí,ATL3,5,-0.037975,450,708
+Ibicuí,ATL3,6,-0.029576,450,708
+Ibicuí,ATL3,7,-0.029923,450,708
+Ibicuí,ATL3,8,-0.054726,450,708
+Ibicuí,ATL3,9,-0.015180,450,708
+Ibicuí,ATL3,10,-0.006572,450,708
+Ibicuí,ATL3,11,-0.016972,450,708
+Ibicuí,ATL3,12,-0.020718,450,708
+Ibicuí,NAO,0,-0.002140,450,708
+Ibicuí,NAO,1,0.001198,450,708
+Ibicuí,NAO,2,-0.012690,450,708
+Ibicuí,NAO,3,-0.003269,450,708
+Ibicuí,NAO,4,-0.009089,450,708
+Ibicuí,NAO,5,0.003201,450,708
+Ibicuí,NAO,6,0.006760,450,708
+Ibicuí,NAO,7,-0.016327,450,708
+Ibicuí,NAO,8,-0.046855,450,708
+Ibicuí,NAO,9,-0.067170,450,708
+Ibicuí,NAO,10,-0.046078,450,708
+Ibicuí,NAO,11,-0.044396,450,708
+Ibicuí,NAO,12,-0.050607,450,708
+Ibicuí,PDO,0,-0.023727,450,708
+Ibicuí,PDO,1,0.002142,450,708
+Ibicuí,PDO,2,0.022378,450,708
+Ibicuí,PDO,3,0.020646,450,708
+Ibicuí,PDO,4,0.003353,450,708
+Ibicuí,PDO,5,0.008080,450,708
+Ibicuí,PDO,6,0.022158,450,708
+Ibicuí,PDO,7,-0.000324,450,708
+Ibicuí,PDO,8,0.026446,450,708
+Ibicuí,PDO,9,0.033683,450,708
+Ibicuí,PDO,10,0.022651,450,708
+Ibicuí,PDO,11,0.034733,450,708
+Ibicuí,PDO,12,0.015707,450,708
+Ibicuí,AMO,0,0.031586,450,708
+Ibicuí,AMO,1,0.025283,450,708
+Ibicuí,AMO,2,-0.002981,450,708
+Ibicuí,AMO,3,-0.016567,450,708
+Ibicuí,AMO,4,-0.017803,450,708
+Ibicuí,AMO,5,-0.019923,450,708
+Ibicuí,AMO,6,-0.001179,450,708
+Ibicuí,AMO,7,-0.021636,450,708
+Ibicuí,AMO,8,0.062867,450,708
+Ibicuí,AMO,9,0.086859,450,708
+Ibicuí,AMO,10,0.086403,450,708
+Ibicuí,AMO,11,0.121465,450,708
+Ibicuí,AMO,12,0.071483,450,708
+Ibicuí,ENSO,0,0.007052,450,708
+Ibicuí,ENSO,1,0.031888,450,708
+Ibicuí,ENSO,2,0.055871,450,708
+Ibicuí,ENSO,3,0.042691,450,708
+Ibicuí,ENSO,4,0.062858,450,708
+Ibicuí,ENSO,5,0.011345,450,708
+Ibicuí,ENSO,6,0.059710,450,708
+Ibicuí,ENSO,7,0.004250,450,708
+Ibicuí,ENSO,8,-0.102719,450,708
+Ibicuí,ENSO,9,-0.082297,450,708
+Ibicuí,ENSO,10,-0.007891,450,708
+Ibicuí,ENSO,11,-0.022679,450,708
+Ibicuí,ENSO,12,-0.029549,450,708
+Ibicuí,IOD,0,,450,708
+Ibicuí,IOD,1,,450,708
+Ibicuí,IOD,2,0.024239,450,708
+Ibicuí,IOD,3,,450,708
+Ibicuí,IOD,4,,450,708
+Ibicuí,IOD,5,0.012083,450,708
+Ibicuí,IOD,6,-0.019547,450,708
+Ibicuí,IOD,7,,450,708
+Ibicuí,IOD,8,,450,708
+Ibicuí,IOD,9,,450,708
+Ibicuí,IOD,10,,450,708
+Ibicuí,IOD,11,,450,708
+Ibicuí,IOD,12,0.091497,450,708
+Ibicuí,SAM,0,-0.005833,450,492
+Ibicuí,SAM,1,-0.028017,450,491
+Ibicuí,SAM,2,0.025733,450,490
+Ibicuí,SAM,3,-0.000248,450,489
+Ibicuí,SAM,4,0.000269,450,488
+Ibicuí,SAM,5,-0.008552,450,487
+Ibicuí,SAM,6,-0.023548,450,486
+Ibicuí,SAM,7,-0.024696,450,485
+Ibicuí,SAM,8,-0.032168,450,484
+Ibicuí,SAM,9,0.027572,450,483
+Ibicuí,SAM,10,0.049581,450,482
+Ibicuí,SAM,11,0.059516,450,481
+Ibicuí,SAM,12,0.022937,450,480
+Ibicuí,TNA,0,0.006419,450,708
+Ibicuí,TNA,1,0.023066,450,708
+Ibicuí,TNA,2,0.030250,450,708
+Ibicuí,TNA,3,0.051374,450,708
+Ibicuí,TNA,4,-0.009763,450,708
+Ibicuí,TNA,5,-0.006731,450,708
+Ibicuí,TNA,6,-0.018658,450,708
+Ibicuí,TNA,7,-0.023675,450,708
+Ibicuí,TNA,8,-0.026918,450,708
+Ibicuí,TNA,9,-0.029195,450,708
+Ibicuí,TNA,10,-0.043064,450,708
+Ibicuí,TNA,11,-0.062129,450,708
+Ibicuí,TNA,12,-0.090710,450,708
+Ibicuí,TSA,0,-0.000759,450,708
+Ibicuí,TSA,1,-0.025019,450,708
+Ibicuí,TSA,2,-0.020915,450,708
+Ibicuí,TSA,3,-0.031224,450,708
+Ibicuí,TSA,4,-0.030032,450,708
+Ibicuí,TSA,5,-0.055946,450,708
+Ibicuí,TSA,6,-0.043845,450,708
+Ibicuí,TSA,7,-0.024657,450,708
+Ibicuí,TSA,8,0.048674,450,708
+Ibicuí,TSA,9,0.028920,450,708
+Ibicuí,TSA,10,0.052596,450,708
+Ibicuí,TSA,11,0.074808,450,708
+Ibicuí,TSA,12,0.012493,450,708
+Uruguai e Negro,ATL3,0,-0.020173,34,708
+Uruguai e Negro,ATL3,1,-0.037524,34,708
+Uruguai e Negro,ATL3,2,-0.013333,34,708
+Uruguai e Negro,ATL3,3,-0.037774,34,708
+Uruguai e Negro,ATL3,4,-0.014546,34,708
+Uruguai e Negro,ATL3,5,0.009787,34,708
+Uruguai e Negro,ATL3,6,0.031232,34,708
+Uruguai e Negro,ATL3,7,-0.032959,34,708
+Uruguai e Negro,ATL3,8,0.023649,34,708
+Uruguai e Negro,ATL3,9,0.002946,34,708
+Uruguai e Negro,ATL3,10,0.036390,34,708
+Uruguai e Negro,ATL3,11,0.008757,34,708
+Uruguai e Negro,ATL3,12,0.039187,34,708
+Uruguai e Negro,NAO,0,0.003286,34,708
+Uruguai e Negro,NAO,1,-0.009535,34,708
+Uruguai e Negro,NAO,2,0.010619,34,708
+Uruguai e Negro,NAO,3,0.001702,34,708
+Uruguai e Negro,NAO,4,0.013851,34,708
+Uruguai e Negro,NAO,5,-0.005122,34,708
+Uruguai e Negro,NAO,6,0.000882,34,708
+Uruguai e Negro,NAO,7,0.013833,34,708
+Uruguai e Negro,NAO,8,-0.038084,34,708
+Uruguai e Negro,NAO,9,-0.049732,34,708
+Uruguai e Negro,NAO,10,-0.037635,34,708
+Uruguai e Negro,NAO,11,-0.054823,34,708
+Uruguai e Negro,NAO,12,-0.001535,34,708
+Uruguai e Negro,PDO,0,0.022015,34,708
+Uruguai e Negro,PDO,1,0.022751,34,708
+Uruguai e Negro,PDO,2,0.036188,34,708
+Uruguai e Negro,PDO,3,0.017946,34,708
+Uruguai e Negro,PDO,4,0.031156,34,708
+Uruguai e Negro,PDO,5,0.025687,34,708
+Uruguai e Negro,PDO,6,0.019862,34,708
+Uruguai e Negro,PDO,7,0.001654,34,708
+Uruguai e Negro,PDO,8,0.070720,34,708
+Uruguai e Negro,PDO,9,0.072415,34,708
+Uruguai e Negro,PDO,10,0.059783,34,708
+Uruguai e Negro,PDO,11,0.063614,34,708
+Uruguai e Negro,PDO,12,0.035813,34,708
+Uruguai e Negro,AMO,0,0.011976,34,708
+Uruguai e Negro,AMO,1,0.016066,34,708
+Uruguai e Negro,AMO,2,0.006173,34,708
+Uruguai e Negro,AMO,3,-0.022731,34,708
+Uruguai e Negro,AMO,4,0.002998,34,708
+Uruguai e Negro,AMO,5,0.008763,34,708
+Uruguai e Negro,AMO,6,0.008170,34,708
+Uruguai e Negro,AMO,7,0.045171,34,708
+Uruguai e Negro,AMO,8,-0.002579,34,708
+Uruguai e Negro,AMO,9,0.008434,34,708
+Uruguai e Negro,AMO,10,0.015972,34,708
+Uruguai e Negro,AMO,11,-0.003659,34,708
+Uruguai e Negro,AMO,12,-0.009649,34,708
+Uruguai e Negro,ENSO,0,0.052578,34,708
+Uruguai e Negro,ENSO,1,0.022194,34,708
+Uruguai e Negro,ENSO,2,0.008673,34,708
+Uruguai e Negro,ENSO,3,0.041887,34,708
+Uruguai e Negro,ENSO,4,0.028370,34,708
+Uruguai e Negro,ENSO,5,0.042075,34,708
+Uruguai e Negro,ENSO,6,0.034461,34,708
+Uruguai e Negro,ENSO,7,0.018034,34,708
+Uruguai e Negro,ENSO,8,0.099975,34,708
+Uruguai e Negro,ENSO,9,0.006515,34,708
+Uruguai e Negro,ENSO,10,0.361231,34,708
+Uruguai e Negro,ENSO,11,-0.037849,34,708
+Uruguai e Negro,ENSO,12,-0.003760,34,708
+Uruguai e Negro,IOD,0,,34,708
+Uruguai e Negro,IOD,1,,34,708
+Uruguai e Negro,IOD,2,0.025784,34,708
+Uruguai e Negro,IOD,3,,34,708
+Uruguai e Negro,IOD,4,,34,708
+Uruguai e Negro,IOD,5,0.004037,34,708
+Uruguai e Negro,IOD,6,0.011098,34,708
+Uruguai e Negro,IOD,7,,34,708
+Uruguai e Negro,IOD,8,,34,708
+Uruguai e Negro,IOD,9,,34,708
+Uruguai e Negro,IOD,10,,34,708
+Uruguai e Negro,IOD,11,,34,708
+Uruguai e Negro,IOD,12,0.147567,34,708
+Uruguai e Negro,SAM,0,-0.045160,34,492
+Uruguai e Negro,SAM,1,-0.001260,34,491
+Uruguai e Negro,SAM,2,0.057382,34,490
+Uruguai e Negro,SAM,3,0.027756,34,489
+Uruguai e Negro,SAM,4,0.009921,34,488
+Uruguai e Negro,SAM,5,0.055486,34,487
+Uruguai e Negro,SAM,6,0.014651,34,486
+Uruguai e Negro,SAM,7,-0.074248,34,485
+Uruguai e Negro,SAM,8,-0.048223,34,484
+Uruguai e Negro,SAM,9,-0.010077,34,483
+Uruguai e Negro,SAM,10,-0.040986,34,482
+Uruguai e Negro,SAM,11,0.011203,34,481
+Uruguai e Negro,SAM,12,0.010544,34,480
+Uruguai e Negro,TNA,0,0.004378,34,708
+Uruguai e Negro,TNA,1,0.009922,34,708
+Uruguai e Negro,TNA,2,0.030701,34,708
+Uruguai e Negro,TNA,3,0.052454,34,708
+Uruguai e Negro,TNA,4,0.027694,34,708
+Uruguai e Negro,TNA,5,0.011517,34,708
+Uruguai e Negro,TNA,6,0.014523,34,708
+Uruguai e Negro,TNA,7,0.030381,34,708
+Uruguai e Negro,TNA,8,0.000430,34,708
+Uruguai e Negro,TNA,9,-0.001044,34,708
+Uruguai e Negro,TNA,10,0.019103,34,708
+Uruguai e Negro,TNA,11,0.000998,34,708
+Uruguai e Negro,TNA,12,-0.018635,34,708
+Uruguai e Negro,TSA,0,-0.019909,34,708
+Uruguai e Negro,TSA,1,-0.032376,34,708
+Uruguai e Negro,TSA,2,-0.023045,34,708
+Uruguai e Negro,TSA,3,-0.019305,34,708
+Uruguai e Negro,TSA,4,0.009021,34,708
+Uruguai e Negro,TSA,5,0.000643,34,708
+Uruguai e Negro,TSA,6,-0.027387,34,708
+Uruguai e Negro,TSA,7,0.014628,34,708
+Uruguai e Negro,TSA,8,0.012610,34,708
+Uruguai e Negro,TSA,9,0.025948,34,708
+Uruguai e Negro,TSA,10,0.070204,34,708
+Uruguai e Negro,TSA,11,0.045728,34,708
+Uruguai e Negro,TSA,12,0.028593,34,708
+"Uruguai, Chapecó, Passo Fundo e outros",ATL3,0,0.022128,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ATL3,1,0.007295,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ATL3,2,-0.024093,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ATL3,3,0.016674,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ATL3,4,-0.020027,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ATL3,5,-0.034883,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ATL3,6,-0.073959,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ATL3,7,0.023312,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ATL3,8,-0.015176,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ATL3,9,0.034215,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ATL3,10,0.059800,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ATL3,11,0.064925,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ATL3,12,0.037901,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",NAO,0,0.014434,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",NAO,1,0.034107,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",NAO,2,0.024656,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",NAO,3,0.048563,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",NAO,4,0.017739,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",NAO,5,0.038489,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",NAO,6,0.020988,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",NAO,7,0.043606,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",NAO,8,0.043744,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",NAO,9,-0.049018,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",NAO,10,-0.075698,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",NAO,11,-0.037462,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",NAO,12,-0.052740,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",PDO,0,0.019941,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",PDO,1,0.012926,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",PDO,2,-0.010492,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",PDO,3,0.026532,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",PDO,4,0.024639,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",PDO,5,0.002135,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",PDO,6,-0.009652,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",PDO,7,0.006090,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",PDO,8,0.018433,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",PDO,9,0.048843,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",PDO,10,0.051331,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",PDO,11,0.058491,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",PDO,12,0.056413,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",AMO,0,0.030946,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",AMO,1,0.035904,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",AMO,2,0.019949,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",AMO,3,-0.022160,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",AMO,4,0.009578,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",AMO,5,-0.024549,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",AMO,6,0.038792,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",AMO,7,0.001278,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",AMO,8,-0.065999,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",AMO,9,-0.034818,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",AMO,10,-0.055526,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",AMO,11,-0.031877,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",AMO,12,-0.033638,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ENSO,0,0.024818,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ENSO,1,0.073958,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ENSO,2,0.099108,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ENSO,3,0.044546,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ENSO,4,0.031404,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ENSO,5,0.023135,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ENSO,6,0.010849,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ENSO,7,0.017366,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ENSO,8,0.058364,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ENSO,9,0.022244,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ENSO,10,-0.032593,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ENSO,11,-0.009499,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",ENSO,12,0.028502,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",IOD,0,,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",IOD,1,,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",IOD,2,0.051075,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",IOD,3,,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",IOD,4,,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",IOD,5,0.029896,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",IOD,6,0.053650,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",IOD,7,,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",IOD,8,,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",IOD,9,,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",IOD,10,,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",IOD,11,,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",IOD,12,0.039577,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",SAM,0,0.022829,174,492
+"Uruguai, Chapecó, Passo Fundo e outros",SAM,1,0.034565,174,491
+"Uruguai, Chapecó, Passo Fundo e outros",SAM,2,-0.067486,174,490
+"Uruguai, Chapecó, Passo Fundo e outros",SAM,3,0.013267,174,489
+"Uruguai, Chapecó, Passo Fundo e outros",SAM,4,0.000753,174,488
+"Uruguai, Chapecó, Passo Fundo e outros",SAM,5,-0.015710,174,487
+"Uruguai, Chapecó, Passo Fundo e outros",SAM,6,-0.072510,174,486
+"Uruguai, Chapecó, Passo Fundo e outros",SAM,7,-0.011440,174,485
+"Uruguai, Chapecó, Passo Fundo e outros",SAM,8,0.098646,174,484
+"Uruguai, Chapecó, Passo Fundo e outros",SAM,9,0.028570,174,483
+"Uruguai, Chapecó, Passo Fundo e outros",SAM,10,-0.048555,174,482
+"Uruguai, Chapecó, Passo Fundo e outros",SAM,11,0.058061,174,481
+"Uruguai, Chapecó, Passo Fundo e outros",SAM,12,0.010585,174,480
+"Uruguai, Chapecó, Passo Fundo e outros",TNA,0,0.040295,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TNA,1,0.031721,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TNA,2,0.025462,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TNA,3,0.043625,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TNA,4,0.022675,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TNA,5,0.019061,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TNA,6,0.047748,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TNA,7,0.053289,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TNA,8,0.016815,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TNA,9,-0.019219,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TNA,10,0.022810,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TNA,11,-0.000490,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TNA,12,0.004901,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TSA,0,0.008716,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TSA,1,0.020151,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TSA,2,0.030985,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TSA,3,0.018942,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TSA,4,0.012037,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TSA,5,-0.014375,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TSA,6,0.038281,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TSA,7,-0.008799,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TSA,8,-0.083512,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TSA,9,-0.039218,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TSA,10,-0.007496,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TSA,11,-0.005688,174,708
+"Uruguai, Chapecó, Passo Fundo e outros",TSA,12,-0.028899,174,708
+"Uruguai, Várzea, Turvo e outros",ATL3,0,-0.019705,249,708
+"Uruguai, Várzea, Turvo e outros",ATL3,1,-0.008455,249,708
+"Uruguai, Várzea, Turvo e outros",ATL3,2,0.008314,249,708
+"Uruguai, Várzea, Turvo e outros",ATL3,3,0.001392,249,708
+"Uruguai, Várzea, Turvo e outros",ATL3,4,-0.013625,249,708
+"Uruguai, Várzea, Turvo e outros",ATL3,5,-0.026083,249,708
+"Uruguai, Várzea, Turvo e outros",ATL3,6,-0.027840,249,708
+"Uruguai, Várzea, Turvo e outros",ATL3,7,0.014158,249,708
+"Uruguai, Várzea, Turvo e outros",ATL3,8,0.016622,249,708
+"Uruguai, Várzea, Turvo e outros",ATL3,9,0.041331,249,708
+"Uruguai, Várzea, Turvo e outros",ATL3,10,0.022032,249,708
+"Uruguai, Várzea, Turvo e outros",ATL3,11,0.035746,249,708
+"Uruguai, Várzea, Turvo e outros",ATL3,12,0.019636,249,708
+"Uruguai, Várzea, Turvo e outros",NAO,0,-0.023100,249,708
+"Uruguai, Várzea, Turvo e outros",NAO,1,0.028723,249,708
+"Uruguai, Várzea, Turvo e outros",NAO,2,0.016331,249,708
+"Uruguai, Várzea, Turvo e outros",NAO,3,0.033440,249,708
+"Uruguai, Várzea, Turvo e outros",NAO,4,0.024215,249,708
+"Uruguai, Várzea, Turvo e outros",NAO,5,0.029154,249,708
+"Uruguai, Várzea, Turvo e outros",NAO,6,0.017465,249,708
+"Uruguai, Várzea, Turvo e outros",NAO,7,0.013550,249,708
+"Uruguai, Várzea, Turvo e outros",NAO,8,-0.016652,249,708
+"Uruguai, Várzea, Turvo e outros",NAO,9,-0.008007,249,708
+"Uruguai, Várzea, Turvo e outros",NAO,10,-0.019122,249,708
+"Uruguai, Várzea, Turvo e outros",NAO,11,-0.007504,249,708
+"Uruguai, Várzea, Turvo e outros",NAO,12,-0.044267,249,708
+"Uruguai, Várzea, Turvo e outros",PDO,0,-0.001310,249,708
+"Uruguai, Várzea, Turvo e outros",PDO,1,-0.016821,249,708
+"Uruguai, Várzea, Turvo e outros",PDO,2,-0.014310,249,708
+"Uruguai, Várzea, Turvo e outros",PDO,3,-0.001397,249,708
+"Uruguai, Várzea, Turvo e outros",PDO,4,0.005006,249,708
+"Uruguai, Várzea, Turvo e outros",PDO,5,-0.034907,249,708
+"Uruguai, Várzea, Turvo e outros",PDO,6,-0.040024,249,708
+"Uruguai, Várzea, Turvo e outros",PDO,7,-0.021766,249,708
+"Uruguai, Várzea, Turvo e outros",PDO,8,0.044126,249,708
+"Uruguai, Várzea, Turvo e outros",PDO,9,0.067314,249,708
+"Uruguai, Várzea, Turvo e outros",PDO,10,0.053892,249,708
+"Uruguai, Várzea, Turvo e outros",PDO,11,0.038096,249,708
+"Uruguai, Várzea, Turvo e outros",PDO,12,0.075432,249,708
+"Uruguai, Várzea, Turvo e outros",AMO,0,0.023502,249,708
+"Uruguai, Várzea, Turvo e outros",AMO,1,0.006055,249,708
+"Uruguai, Várzea, Turvo e outros",AMO,2,0.018733,249,708
+"Uruguai, Várzea, Turvo e outros",AMO,3,0.004967,249,708
+"Uruguai, Várzea, Turvo e outros",AMO,4,0.031904,249,708
+"Uruguai, Várzea, Turvo e outros",AMO,5,0.000527,249,708
+"Uruguai, Várzea, Turvo e outros",AMO,6,0.059968,249,708
+"Uruguai, Várzea, Turvo e outros",AMO,7,-0.019224,249,708
+"Uruguai, Várzea, Turvo e outros",AMO,8,0.028692,249,708
+"Uruguai, Várzea, Turvo e outros",AMO,9,0.036661,249,708
+"Uruguai, Várzea, Turvo e outros",AMO,10,0.026728,249,708
+"Uruguai, Várzea, Turvo e outros",AMO,11,0.030016,249,708
+"Uruguai, Várzea, Turvo e outros",AMO,12,0.032688,249,708
+"Uruguai, Várzea, Turvo e outros",ENSO,0,-0.009210,249,708
+"Uruguai, Várzea, Turvo e outros",ENSO,1,0.029309,249,708
+"Uruguai, Várzea, Turvo e outros",ENSO,2,0.039570,249,708
+"Uruguai, Várzea, Turvo e outros",ENSO,3,0.044544,249,708
+"Uruguai, Várzea, Turvo e outros",ENSO,4,0.031872,249,708
+"Uruguai, Várzea, Turvo e outros",ENSO,5,0.034949,249,708
+"Uruguai, Várzea, Turvo e outros",ENSO,6,0.021726,249,708
+"Uruguai, Várzea, Turvo e outros",ENSO,7,-0.002636,249,708
+"Uruguai, Várzea, Turvo e outros",ENSO,8,0.015886,249,708
+"Uruguai, Várzea, Turvo e outros",ENSO,9,0.018345,249,708
+"Uruguai, Várzea, Turvo e outros",ENSO,10,-0.003148,249,708
+"Uruguai, Várzea, Turvo e outros",ENSO,11,-0.011471,249,708
+"Uruguai, Várzea, Turvo e outros",ENSO,12,-0.008784,249,708
+"Uruguai, Várzea, Turvo e outros",IOD,0,,249,708
+"Uruguai, Várzea, Turvo e outros",IOD,1,,249,708
+"Uruguai, Várzea, Turvo e outros",IOD,2,0.035922,249,708
+"Uruguai, Várzea, Turvo e outros",IOD,3,,249,708
+"Uruguai, Várzea, Turvo e outros",IOD,4,,249,708
+"Uruguai, Várzea, Turvo e outros",IOD,5,0.012556,249,708
+"Uruguai, Várzea, Turvo e outros",IOD,6,0.076209,249,708
+"Uruguai, Várzea, Turvo e outros",IOD,7,,249,708
+"Uruguai, Várzea, Turvo e outros",IOD,8,,249,708
+"Uruguai, Várzea, Turvo e outros",IOD,9,,249,708
+"Uruguai, Várzea, Turvo e outros",IOD,10,,249,708
+"Uruguai, Várzea, Turvo e outros",IOD,11,,249,708
+"Uruguai, Várzea, Turvo e outros",IOD,12,-0.000550,249,708
+"Uruguai, Várzea, Turvo e outros",SAM,0,-0.001018,249,492
+"Uruguai, Várzea, Turvo e outros",SAM,1,0.011036,249,491
+"Uruguai, Várzea, Turvo e outros",SAM,2,0.006504,249,490
+"Uruguai, Várzea, Turvo e outros",SAM,3,0.038868,249,489
+"Uruguai, Várzea, Turvo e outros",SAM,4,-0.009492,249,488
+"Uruguai, Várzea, Turvo e outros",SAM,5,-0.012459,249,487
+"Uruguai, Várzea, Turvo e outros",SAM,6,0.009551,249,486
+"Uruguai, Várzea, Turvo e outros",SAM,7,0.011082,249,485
+"Uruguai, Várzea, Turvo e outros",SAM,8,0.034533,249,484
+"Uruguai, Várzea, Turvo e outros",SAM,9,0.009624,249,483
+"Uruguai, Várzea, Turvo e outros",SAM,10,0.011850,249,482
+"Uruguai, Várzea, Turvo e outros",SAM,11,0.076323,249,481
+"Uruguai, Várzea, Turvo e outros",SAM,12,0.037442,249,480
+"Uruguai, Várzea, Turvo e outros",TNA,0,0.017968,249,708
+"Uruguai, Várzea, Turvo e outros",TNA,1,0.010978,249,708
+"Uruguai, Várzea, Turvo e outros",TNA,2,0.014325,249,708
+"Uruguai, Várzea, Turvo e outros",TNA,3,0.024338,249,708
+"Uruguai, Várzea, Turvo e outros",TNA,4,0.022397,249,708
+"Uruguai, Várzea, Turvo e outros",TNA,5,0.022526,249,708
+"Uruguai, Várzea, Turvo e outros",TNA,6,0.048265,249,708
+"Uruguai, Várzea, Turvo e outros",TNA,7,0.037222,249,708
+"Uruguai, Várzea, Turvo e outros",TNA,8,0.026622,249,708
+"Uruguai, Várzea, Turvo e outros",TNA,9,-0.001548,249,708
+"Uruguai, Várzea, Turvo e outros",TNA,10,0.009266,249,708
+"Uruguai, Várzea, Turvo e outros",TNA,11,-0.000488,249,708
+"Uruguai, Várzea, Turvo e outros",TNA,12,-0.021333,249,708
+"Uruguai, Várzea, Turvo e outros",TSA,0,0.013461,249,708
+"Uruguai, Várzea, Turvo e outros",TSA,1,0.011983,249,708
+"Uruguai, Várzea, Turvo e outros",TSA,2,0.006593,249,708
+"Uruguai, Várzea, Turvo e outros",TSA,3,0.016249,249,708
+"Uruguai, Várzea, Turvo e outros",TSA,4,0.029143,249,708
+"Uruguai, Várzea, Turvo e outros",TSA,5,-0.001111,249,708
+"Uruguai, Várzea, Turvo e outros",TSA,6,0.011971,249,708
+"Uruguai, Várzea, Turvo e outros",TSA,7,-0.012806,249,708
+"Uruguai, Várzea, Turvo e outros",TSA,8,-0.027153,249,708
+"Uruguai, Várzea, Turvo e outros",TSA,9,0.014517,249,708
+"Uruguai, Várzea, Turvo e outros",TSA,10,0.025214,249,708
+"Uruguai, Várzea, Turvo e outros",TSA,11,-0.011328,249,708
+"Uruguai, Várzea, Turvo e outros",TSA,12,-0.015782,249,708
