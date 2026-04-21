@@ -14,9 +14,9 @@ def regression_calc(X, Y):
     Parameters
     ----------
     X : array-like
-        Variável preditora (e.g., precipitação)
+        Variável preditora (e.g., índice MoV)
     Y : array-like
-        Variável resposta (e.g., índice TNA)
+        Variável resposta (e.g., precipitação)
 
     Returns
     -------

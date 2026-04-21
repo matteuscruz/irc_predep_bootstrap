@@ -67,7 +67,7 @@ def _compute_lag_worker(args):
             mv_v = mov_aligned[mask]
             if len(np.unique(mv_v)) < 3 or len(np.unique(pp_v)) < 3:
                 continue
-            r2_map[i, j] = _regression_calc(pp_v, mv_v)
+            r2_map[i, j] = _regression_calc(mv_v, pp_v)
     elapsed = _time.time() - t0
     valid = int(np.sum(~np.isnan(r2_map)))
     print(
