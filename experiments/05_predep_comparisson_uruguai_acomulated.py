@@ -61,10 +61,10 @@ def _ecdf(data):
     return lambda x: np.searchsorted(s, x, side="right") / n
 
 
-def _predep_legacy(X, Y, n_boot=5000):
+def _predep_core(X, Y, n_boot=5000):
     """
-    PREDEP versão original (src/predep_calculation/legacy.py).
-    Particiona Y (precip) via Bayesian Blocks e condiciona X (MoV) nos bins.
+    PREDEP: X = preditor (MoV), Y = target (precip, particionado).
+    Mede quanto o conhecimento de Y reduz a incerteza sobre X.
     alpha = (s(X|Y) - s(X)) / s(X|Y)
     """
     import numpy as np
@@ -74,7 +74,10 @@ def _predep_legacy(X, Y, n_boot=5000):
     try:
         BX1 = np.random.choice(X, n_boot)
         BX2 = np.random.choice(X, n_boot)
-        s_x = float(ss.gaussian_kde(BX1 - BX2).pdf(0))
+        diff_x = BX1 - BX2
+        if np.std(diff_x) == 0:
+            return float("nan")
+        s_x = float(ss.gaussian_kde(diff_x).pdf(0))
 
         edges_y = bayesian_blocks(Y)
         ecdf_y  = _ecdf(Y)
@@ -83,10 +86,10 @@ def _predep_legacy(X, Y, n_boot=5000):
         if edges_y.shape[0] > 1:
             for k in range(1, edges_y.shape[0]):
                 bg, ed = edges_y[k - 1], edges_y[k]
-                X_c = X[(Y >= bg) & (Y < ed)]
-                if X_c.shape[0] < 2 or len(np.unique(X_c)) < 2:
+                x_c = X[(Y >= bg) & (Y < ed)]
+                if x_c.shape[0] < 2 or len(np.unique(x_c)) < 2:
                     continue
-                dx_c = np.random.choice(X_c, n_boot) - np.random.choice(X_c, n_boot)
+                dx_c = np.random.choice(x_c, n_boot) - np.random.choice(x_c, n_boot)
                 if np.std(dx_c) == 0:
                     continue
                 s_x_mid_y += (ecdf_y(ed) - ecdf_y(bg)) * float(
@@ -95,46 +98,6 @@ def _predep_legacy(X, Y, n_boot=5000):
             if s_x_mid_y == 0:
                 return float("nan")
             return float((s_x_mid_y - s_x) / s_x_mid_y)
-        return float("nan")
-    except Exception:
-        return float("nan")
-
-
-def _predep_core(X, Y, n_boot=5000):
-    """
-    PREDEP versão modificada (src/predep_calculation/core.py).
-    X = preditor (MoV), Y = resposta (precip).
-    Particiona X via Bayesian Blocks e condiciona Y nos bins.
-    alpha = (s(Y|X) - s(Y)) / s(Y|X)
-    """
-    import numpy as np
-    import scipy.stats as ss
-    from astropy.stats import bayesian_blocks
-
-    try:
-        BY1 = np.random.choice(Y, n_boot)
-        BY2 = np.random.choice(Y, n_boot)
-        s_y = float(ss.gaussian_kde(BY1 - BY2).pdf(0))
-
-        edges_x = bayesian_blocks(X)
-        ecdf_x  = _ecdf(X)
-
-        s_y_mid_x = 0.0
-        if edges_x.shape[0] > 1:
-            for k in range(1, edges_x.shape[0]):
-                bg, ed = edges_x[k - 1], edges_x[k]
-                Y_c = Y[(X >= bg) & (X < ed)]
-                if Y_c.shape[0] < 2 or len(np.unique(Y_c)) < 2:
-                    continue
-                dy_c = np.random.choice(Y_c, n_boot) - np.random.choice(Y_c, n_boot)
-                if np.std(dy_c) == 0:
-                    continue
-                s_y_mid_x += (ecdf_x(ed) - ecdf_x(bg)) * float(
-                    ss.gaussian_kde(dy_c).pdf(0)
-                )
-            if s_y_mid_x == 0:
-                return float("nan")
-            return float((s_y_mid_x - s_y) / s_y_mid_x)
         return float("nan")
     except Exception:
         return float("nan")
@@ -163,12 +126,12 @@ def _regression(X, Y):
 
 def _compute_lag_worker(args):
     """
-    Worker: para um lag e uma estação, alinha o MoV e calcula as 3 métricas
+    Worker: para um lag e uma estação, alinha o MoV e calcula as 2 métricas
     para todos os clusters.
 
     args: (lag, cluster_season_data, mov_lookup, season_month, n_boot)
       cluster_season_data: {cname: (anomaly_array, years_array)}
-    Retorna (lag, {cname: (alpha_legacy, alpha_core, r2)}).
+    Retorna (lag, {cname: (alpha_core, r2)}).
     """
     import numpy as np
     import warnings
@@ -191,21 +154,20 @@ def _compute_lag_worker(args):
 
         valid_mask = ~np.isnan(mov_aligned) & ~np.isnan(anomaly)
         if valid_mask.sum() < 10:
-            results[cname] = (float("nan"), float("nan"), float("nan"))
+            results[cname] = (float("nan"), float("nan"))
             continue
 
         X = mov_aligned[valid_mask]   # MoV (preditor)
         Y = anomaly[valid_mask]       # precipitação (resposta)
 
         if len(np.unique(X)) < 3 or len(np.unique(Y)) < 3:
-            results[cname] = (float("nan"), float("nan"), float("nan"))
+            results[cname] = (float("nan"), float("nan"))
             continue
 
-        al = _predep_legacy(X, Y, n_boot)
         ac = _predep_core(X, Y, n_boot)
         r2 = _regression(X, Y)
 
-        results[cname] = (al, ac, r2)
+        results[cname] = (ac, r2)
 
     return lag, results
 
@@ -220,16 +182,16 @@ def _compute_lag_worker(args):
 )
 def process_mov(mov_name: str, n_boot: int = 5000, exp_n: int = 1):
     """
-    Container Modal: calcula as 3 métricas sazonais por cluster para um MoV.
+    Container Modal: calcula PREDEP e r² sazonais por cluster para um MoV.
 
-    Passos (idênticos ao exp 04 até o passo 5, depois computa 3 métricas):
+    Passos:
       1. Xavier mensal recortado na bbox do Uruguai
       2. Máscaras de cluster pré-computadas
       3. Integração espacial → série mensal acumulada por cluster
       4. Agregação sazonal anual + anomalia (DJF/MAM/JJA/SON)
       5. MoV mensal → lookup (year, month)
-      6. Para cada estação × lag: alpha_legacy, alpha_core, r2 (paralelo)
-      7. Salva NetCDF com 3 variáveis (season, cluster, lag)
+      6. Para cada estação × lag: alpha_core, r2 (paralelo)
+      7. Salva NetCDF com 2 variáveis (season, cluster, lag)
     """
     import numpy as np
     import pandas as pd
@@ -338,10 +300,9 @@ def process_mov(mov_name: str, n_boot: int = 5000, exp_n: int = 1):
     n_valid = int(mov_monthly["value"].notna().sum())
     print(f"\n  MoV '{mov_name}': {n_valid} meses válidos")
 
-    # ── 6. Calcular 3 métricas por estação × lag (paralelo) ───────────────────
+    # ── 6. Calcular PREDEP + r² por estação × lag (paralelo) ─────────────────
     n_seasons  = len(SEASONS)
     n_clusters = len(cluster_names)
-    alpha_leg_arr  = np.full((n_seasons, n_clusters, N_LAGS), np.nan)
     alpha_core_arr = np.full((n_seasons, n_clusters, N_LAGS), np.nan)
     r2_arr         = np.full((n_seasons, n_clusters, N_LAGS), np.nan)
 
@@ -354,7 +315,7 @@ def process_mov(mov_name: str, n_boot: int = 5000, exp_n: int = 1):
             for lag in range(1, N_LAGS + 1)
         ]
 
-        print(f"\n  [{season}] 3 métricas × {len(cluster_data)} clusters "
+        print(f"\n  [{season}] PREDEP × {len(cluster_data)} clusters "
               f"× {N_LAGS} lags  (workers=8)...")
         t_pool = time.time()
         with mp.Pool(processes=8) as pool:
@@ -362,27 +323,24 @@ def process_mov(mov_name: str, n_boot: int = 5000, exp_n: int = 1):
                 _compute_lag_worker, lag_args
             ):
                 for c_idx, cname in enumerate(cluster_names):
-                    al, ac, r2 = cluster_results.get(
-                        cname, (float("nan"), float("nan"), float("nan"))
+                    ac, r2 = cluster_results.get(
+                        cname, (float("nan"), float("nan"))
                     )
-                    alpha_leg_arr[s_idx, c_idx, lag - 1]  = al
                     alpha_core_arr[s_idx, c_idx, lag - 1] = ac
                     r2_arr[s_idx, c_idx, lag - 1]         = r2
         print(f"  [{season}] Pool finalizado em {time.time() - t_pool:.1f}s")
 
         for li, lag in enumerate(range(1, N_LAGS + 1)):
-            v_leg  = int(np.sum(~np.isnan(alpha_leg_arr[s_idx, :, li])))
             v_core = int(np.sum(~np.isnan(alpha_core_arr[s_idx, :, li])))
             v_r2   = int(np.sum(~np.isnan(r2_arr[s_idx, :, li])))
-            print(f"    Lag {lag:2d}: legacy={v_leg}/{n_clusters}  "
-                  f"core={v_core}/{n_clusters}  r2={v_r2}/{n_clusters}")
+            print(f"    Lag {lag:2d}: predep={v_core}/{n_clusters}  "
+                  f"r2={v_r2}/{n_clusters}")
 
     # ── 7. Salvar NetCDF ──────────────────────────────────────────────────────
     ds_out = xr.Dataset(
         {
-            "alpha_legacy": (["season", "cluster", "lag"], alpha_leg_arr),
-            "alpha_core":   (["season", "cluster", "lag"], alpha_core_arr),
-            "r2":           (["season", "cluster", "lag"], r2_arr),
+            "alpha_core": (["season", "cluster", "lag"], alpha_core_arr),
+            "r2":         (["season", "cluster", "lag"], r2_arr),
         },
         coords={
             "season":  SEASONS,
@@ -391,13 +349,10 @@ def process_mov(mov_name: str, n_boot: int = 5000, exp_n: int = 1):
         },
     )
     ds_out.attrs["description"] = (
-        f"Comparação PREDEP legacy / core / r² — clusters Uruguai vs MoV {mov_name}"
-    )
-    ds_out["alpha_legacy"].attrs["description"] = (
-        "predep(X=MoV, Y=precip): particiona precip, condiciona MoV — versão original"
+        f"PREDEP + r² — clusters Uruguai vs MoV {mov_name}"
     )
     ds_out["alpha_core"].attrs["description"] = (
-        "predep(X=MoV, Y=precip): particiona MoV (preditor), condiciona precip — versão modificada"
+        "predep(X=MoV, Y=precip): particiona precip, condiciona MoV"
     )
     ds_out["r2"].attrs["description"] = "r² regressão linear — baseline"
 

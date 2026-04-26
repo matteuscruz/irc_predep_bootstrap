@@ -21,17 +21,17 @@ def _make_alpha_cmap():
     """
     Colormap para α ∈ [0, 1]:
       [0.0, 0.1] → cinza (valores não-significativos)
-      (0.1, 1.0] → gradiente branco → laranja
+      (0.1, 1.0] → gradiente laranja pálido → laranja intenso
     """
     gray = (0.65, 0.65, 0.65)
-    white = (1.0, 1.0, 1.0)
-    orange = (1.0, 0.45, 0.0)
+    light_orange = (1.0, 0.88, 0.70)
+    orange = (1.0, 0.40, 0.0)
 
-    n_gradient = 9  # bins 1..9 → branco → laranja
+    n_gradient = 9  # bins 1..9 → laranja pálido → laranja intenso
     colors = [gray]
     for i in range(n_gradient):
         t = i / (n_gradient - 1)
-        colors.append(tuple(white[c] + t * (orange[c] - white[c]) for c in range(3)))
+        colors.append(tuple(light_orange[c] + t * (orange[c] - light_orange[c]) for c in range(3)))
 
     cmap = ListedColormap(colors, name="alpha_cmap")
     norm = BoundaryNorm(ALPHA_LEVELS, ncolors=cmap.N)
@@ -230,7 +230,7 @@ def generate_plots_predep(nc_file, mov_name, plots_dir,
 
 def generate_plots_comparison(nc_file, mov_name, plots_dir,
                                masks_path="data/processed/uruguai_cluster_masks.npz"):
-    """Gera 6 plots (2 por métrica: legacy, core, r2) para o experimento 05."""
+    """Gera 4 plots (2 por métrica: core, r2) para o experimento 05."""
     import netCDF4 as nc4
 
     md = load_cluster_masks(masks_path)
@@ -243,16 +243,15 @@ def generate_plots_comparison(nc_file, mov_name, plots_dir,
                   for c in nc.variables["cluster"][:]]
         s_nc = [s.decode() if isinstance(s, bytes) else str(s)
                 for s in nc.variables["season"][:]]
-        al = np.ma.filled(nc.variables["alpha_legacy"][:], np.nan).astype(float)
         ac = np.ma.filled(nc.variables["alpha_core"][:], np.nan).astype(float)
         r2 = np.ma.filled(nc.variables["r2"][:], np.nan).astype(float)
 
     idx = [s_nc.index(s) for s in SEASONS if s in s_nc]
-    al, ac, r2 = al[idx], ac[idx], r2[idx]
+    ac, r2 = ac[idx], r2[idx]
     mask_idx = {n: mask_cnames.index(n) for n in cnames if n in mask_cnames}
 
     Path(plots_dir).mkdir(parents=True, exist_ok=True)
-    for metric_name, alpha in [("legacy", al), ("core", ac), ("r2", r2)]:
+    for metric_name, alpha in [("core", ac), ("r2", r2)]:
         label = f"{mov_name}_{metric_name}"
         plot_4x4_optimal_lags_clusters(alpha, label, cnames, plots_dir,
                                         masks_flat, mask_idx, n_lat, n_lon)
@@ -395,7 +394,7 @@ def plot_2x4_granular_optimal(alpha, label, lats, lons, output_dir):
 
 
 def generate_plots_granular(nc_file, mov_name, plots_dir):
-    """Gera 6 plots granulares (2 por métrica: legacy, core, r2) para o exp 06."""
+    """Gera 4 plots granulares (2 por métrica: core, r2) para o exp 06."""
     import netCDF4 as nc4
 
     with nc4.Dataset(str(nc_file)) as nc:
@@ -403,15 +402,14 @@ def generate_plots_granular(nc_file, mov_name, plots_dir):
         lons = np.array(nc.variables["longitude"][:])
         s_nc = [s.decode() if isinstance(s, bytes) else str(s)
                 for s in nc.variables["season"][:]]
-        al = np.ma.filled(nc.variables["alpha_legacy"][:], np.nan).astype(float)
         ac = np.ma.filled(nc.variables["alpha_core"][:], np.nan).astype(float)
         r2 = np.ma.filled(nc.variables["r2"][:], np.nan).astype(float)
 
     idx = [s_nc.index(s) for s in SEASONS if s in s_nc]
-    al, ac, r2 = al[idx], ac[idx], r2[idx]
+    ac, r2 = ac[idx], r2[idx]
 
     Path(plots_dir).mkdir(parents=True, exist_ok=True)
-    for metric_name, alpha in [("legacy", al), ("core", ac), ("r2", r2)]:
+    for metric_name, alpha in [("core", ac), ("r2", r2)]:
         label = f"{mov_name}_{metric_name}"
         plot_2x4_granular_optimal(alpha, label, lats, lons, plots_dir)
         plot_12x4_granular_all_lags(alpha, label, lats, lons, plots_dir)

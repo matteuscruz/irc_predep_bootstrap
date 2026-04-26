@@ -11,20 +11,23 @@ def _ecdf(data):
 
 def predep(X, Y, n_boot=10000):
     """
-    Calcula PREDEP α_{Y|X}: quanto o conhecimento de X (preditor)
-    reduz a incerteza sobre Y (resposta).
+    PREDEP α_{Y|X}: mede quanto o conhecimento de X (preditor) reduz a incerteza sobre Y (resposta).
 
-    Interpretação: α = (S_{Y|X} - S_Y) / S_{Y|X}
+    Convenção: X = preditor (ex: índice MoV), Y = resposta (ex: precipitação).
+    α = (s(Y|X) − s(Y)) / s(Y|X)
     - 0: X e Y independentes
     - 1: X prediz Y perfeitamente
     """
     try:
-        X = np.asarray(X)
-        Y = np.asarray(Y)
+        X = np.asarray(X, dtype=float)
+        Y = np.asarray(Y, dtype=float)
 
         BY1 = np.random.choice(Y, n_boot)
         BY2 = np.random.choice(Y, n_boot)
-        s_y = float(ss.gaussian_kde(BY1 - BY2).pdf(0))
+        diff_y = BY1 - BY2
+        if np.std(diff_y) == 0:
+            return np.nan
+        s_y = float(np.squeeze(ss.gaussian_kde(diff_y).pdf(0)))
 
         edges_x = bayesian_blocks(X)
         ecdf_x = _ecdf(X)
@@ -32,16 +35,22 @@ def predep(X, Y, n_boot=10000):
         s_y_mid_x = 0.0
         if edges_x.shape[0] > 1:
             for i in range(1, edges_x.shape[0]):
-                bg = edges_x[i - 1]
-                ed = edges_x[i]
-                Y_mid_X = Y[(X >= bg) & (X < ed)]
-                if Y_mid_X.shape[0] == 0:
+                bg, ed = edges_x[i - 1], edges_x[i]
+                y_mid_x = Y[(X >= bg) & (X < ed)]
+                if y_mid_x.shape[0] < 2 or len(np.unique(y_mid_x)) < 2:
                     continue
-
-                dy_c = np.random.choice(Y_mid_X, n_boot) - np.random.choice(Y_mid_X, n_boot)
+                dy_c = (
+                    np.random.choice(y_mid_x, n_boot)
+                    - np.random.choice(y_mid_x, n_boot)
+                )
+                if np.std(dy_c) == 0:
+                    continue
                 p_range = ecdf_x(ed) - ecdf_x(bg)
-                s_y_mid_x += p_range * float(ss.gaussian_kde(dy_c).pdf(0))
+                kde_val = float(np.squeeze(ss.gaussian_kde(dy_c).pdf(0)))
+                s_y_mid_x += p_range * kde_val
 
+            if s_y_mid_x == 0:
+                return np.nan
             return float((s_y_mid_x - s_y) / s_y_mid_x)
         return np.nan
     except Exception:

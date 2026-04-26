@@ -50,6 +50,7 @@ DEFAULT_MOVS = ["ONI", "NIN04", "SOI"]
 
 # Compartilhado via fork com os workers de multiprocessing
 _PRECIP_ARR_GLOBAL = None  # (n_years, n_lat, n_lon)
+_BASIN_MASK_GLOBAL = None  # (n_lat, n_lon) bool — pontos dentro da bacia
 
 
 # ── Funções de cálculo (inlineadas — Modal não acessa src/) ───────────────────
@@ -61,26 +62,30 @@ def _ecdf(data):
     return lambda x: np.searchsorted(s, x, side="right") / n
 
 
-def _predep_legacy(X, Y, n_boot=5000):
-    """PREDEP versão original: particiona Y (precip), condiciona X (MoV)."""
+def _predep_core(X, Y, n_boot=5000):
+    """PREDEP: X = preditor (MoV), Y = target (precip, particionado).
+    Mede quanto o conhecimento de Y reduz a incerteza sobre X.
+    alpha = (s(X|Y) - s(X)) / s(X|Y)
+    """
     import numpy as np
     import scipy.stats as ss
     from astropy.stats import bayesian_blocks
 
     try:
-        s_x = float(ss.gaussian_kde(
-            np.random.choice(X, n_boot) - np.random.choice(X, n_boot)
-        ).pdf(0))
+        diff_x = np.random.choice(X, n_boot) - np.random.choice(X, n_boot)
+        if np.std(diff_x) == 0:
+            return float("nan")
+        s_x = float(ss.gaussian_kde(diff_x).pdf(0))
         edges_y = bayesian_blocks(Y)
         ecdf_y  = _ecdf(Y)
         s_x_mid_y = 0.0
         if edges_y.shape[0] > 1:
             for k in range(1, edges_y.shape[0]):
                 bg, ed = edges_y[k - 1], edges_y[k]
-                X_c = X[(Y >= bg) & (Y < ed)]
-                if X_c.shape[0] < 2 or len(np.unique(X_c)) < 2:
+                x_c = X[(Y >= bg) & (Y < ed)]
+                if x_c.shape[0] < 2 or len(np.unique(x_c)) < 2:
                     continue
-                dx_c = np.random.choice(X_c, n_boot) - np.random.choice(X_c, n_boot)
+                dx_c = np.random.choice(x_c, n_boot) - np.random.choice(x_c, n_boot)
                 if np.std(dx_c) == 0:
                     continue
                 s_x_mid_y += (ecdf_y(ed) - ecdf_y(bg)) * float(
@@ -89,39 +94,6 @@ def _predep_legacy(X, Y, n_boot=5000):
             if s_x_mid_y == 0:
                 return float("nan")
             return float((s_x_mid_y - s_x) / s_x_mid_y)
-        return float("nan")
-    except Exception:
-        return float("nan")
-
-
-def _predep_core(X, Y, n_boot=5000):
-    """PREDEP versão modificada: X = preditor (MoV), particiona X, condiciona Y."""
-    import numpy as np
-    import scipy.stats as ss
-    from astropy.stats import bayesian_blocks
-
-    try:
-        s_y = float(ss.gaussian_kde(
-            np.random.choice(Y, n_boot) - np.random.choice(Y, n_boot)
-        ).pdf(0))
-        edges_x = bayesian_blocks(X)
-        ecdf_x  = _ecdf(X)
-        s_y_mid_x = 0.0
-        if edges_x.shape[0] > 1:
-            for k in range(1, edges_x.shape[0]):
-                bg, ed = edges_x[k - 1], edges_x[k]
-                Y_c = Y[(X >= bg) & (X < ed)]
-                if Y_c.shape[0] < 2 or len(np.unique(Y_c)) < 2:
-                    continue
-                dy_c = np.random.choice(Y_c, n_boot) - np.random.choice(Y_c, n_boot)
-                if np.std(dy_c) == 0:
-                    continue
-                s_y_mid_x += (ecdf_x(ed) - ecdf_x(bg)) * float(
-                    ss.gaussian_kde(dy_c).pdf(0)
-                )
-            if s_y_mid_x == 0:
-                return float("nan")
-            return float((s_y_mid_x - s_y) / s_y_mid_x)
         return float("nan")
     except Exception:
         return float("nan")
@@ -160,11 +132,11 @@ def _precompute_mov_alignment(mov_lookup, years, season_month, lag):
 
 def _compute_lag_worker(args):
     """
-    Worker: calcula as 3 métricas em cada pixel para um lag.
+    Worker: calcula PREDEP + r² em cada pixel para um lag.
     Usa _PRECIP_ARR_GLOBAL (n_years, n_lat, n_lon) herdado via fork.
 
     args: (lag, mov_aligned, n_boot)
-    Retorna (lag, al_map, ac_map, r2_map) — shape (n_lat, n_lon) cada.
+    Retorna (lag, ac_map, r2_map) — shape (n_lat, n_lon) cada.
     """
     import numpy as np
     import warnings
@@ -172,11 +144,11 @@ def _compute_lag_worker(args):
     warnings.filterwarnings("ignore")
 
     lag, mov_aligned, n_boot = args
-    precip_arr = _PRECIP_ARR_GLOBAL  # (n_years, n_lat, n_lon)
+    precip_arr  = _PRECIP_ARR_GLOBAL  # (n_years, n_lat, n_lon)
+    basin_mask  = _BASIN_MASK_GLOBAL  # (n_lat, n_lon) bool
     n_lat = precip_arr.shape[1]
     n_lon = precip_arr.shape[2]
 
-    al_map = np.full((n_lat, n_lon), np.nan)
     ac_map = np.full((n_lat, n_lon), np.nan)
     r2_map = np.full((n_lat, n_lon), np.nan)
 
@@ -184,21 +156,22 @@ def _compute_lag_worker(args):
 
     for i in range(n_lat):
         for j in range(n_lon):
+            if basin_mask is not None and not basin_mask[i, j]:
+                continue
             pp = precip_arr[:, i, j]
             valid = valid_mov & ~np.isnan(pp)
             if valid.sum() < 10:
                 continue
             X = mov_aligned[valid]   # MoV (preditor)
-            Y = pp[valid]             # precipitação (resposta)
+            Y = pp[valid]            # precipitação (resposta)
             if len(np.unique(X)) < 3 or len(np.unique(Y)) < 3:
                 continue
-            al_map[i, j] = _predep_legacy(X, Y, n_boot)
             ac_map[i, j] = _predep_core(X, Y, n_boot)
             r2_map[i, j] = _regression(X, Y)
 
-    valid_count = int(np.sum(~np.isnan(al_map)))
+    valid_count = int(np.sum(~np.isnan(ac_map)))
     print(f"  Lag {lag:2d}: {valid_count}/{n_lat * n_lon} pts válidos", flush=True)
-    return lag, al_map, ac_map, r2_map
+    return lag, ac_map, r2_map
 
 
 # ── Função Modal ──────────────────────────────────────────────────────────────
@@ -211,14 +184,15 @@ def _compute_lag_worker(args):
 )
 def process_mov(mov_name: str, n_boot: int = 5000, exp_n: int = 1):
     """
-    Container Modal: PREDEP granular ponto-a-ponto no bbox do Uruguai.
+    Container Modal: PREDEP granular ponto-a-ponto na bacia do Uruguai.
 
     Passos:
       1. Xavier mensal recortado na bbox do Uruguai
-      2. MoV mensal → lookup (year, month)
-      3. Para cada estação: anomalia sazonal (n_years, n_lat, n_lon)
+      2. Máscara da bacia (união dos clusters) → filtra pixels fora da bacia
+      3. MoV mensal → lookup (year, month)
+      4. Para cada estação: anomalia sazonal (n_years, n_lat, n_lon)
          → expõe global → pool de 8 workers, um por lag
-      4. Salva NC com alpha_legacy, alpha_core, r2 em (season, lag, lat, lon)
+      5. Salva NC com alpha_core, r2 em (season, lag, lat, lon)
     """
     import numpy as np
     import pandas as pd
@@ -231,7 +205,7 @@ def process_mov(mov_name: str, n_boot: int = 5000, exp_n: int = 1):
 
     warnings.filterwarnings("ignore")
 
-    global _PRECIP_ARR_GLOBAL
+    global _PRECIP_ARR_GLOBAL, _BASIN_MASK_GLOBAL
 
     volume.reload()
     start = time.time()
@@ -261,7 +235,19 @@ def process_mov(mov_name: str, n_boot: int = 5000, exp_n: int = 1):
           f"({time_idx[0].date()} → {time_idx[-1].date()})")
     print(f"  Grade: {n_lat}×{n_lon} = {n_lat * n_lon} pts")
 
-    # ── 2. MoV mensal ─────────────────────────────────────────────────────────
+    # ── 2. Máscara da bacia do Uruguai ────────────────────────────────────────
+    try:
+        npz = np.load("/data/input/uruguai_cluster_masks.npz", allow_pickle=True)
+        masks_flat = npz["masks_flat"].astype(bool)  # (n_clusters, n_lat*n_lon)
+        basin_mask_flat = masks_flat.any(axis=0)     # união de todos os clusters
+        _BASIN_MASK_GLOBAL = basin_mask_flat.reshape(n_lat, n_lon)
+        n_basin = int(_BASIN_MASK_GLOBAL.sum())
+        print(f"  Máscara bacia: {n_basin}/{n_lat * n_lon} pts dentro da bacia")
+    except FileNotFoundError:
+        _BASIN_MASK_GLOBAL = None
+        print("  [AVISO] uruguai_cluster_masks.npz não encontrado — sem máscara")
+
+    # ── 3. MoV mensal ─────────────────────────────────────────────────────────
     mov_df = pd.read_csv(f"/data/input/{mov_name}_indice_data.csv")
     mov_df["time"]  = pd.to_datetime(mov_df["time"])
     mov_df["Year"]  = mov_df["time"].dt.year
@@ -280,7 +266,6 @@ def process_mov(mov_name: str, n_boot: int = 5000, exp_n: int = 1):
 
     # ── 3. Por estação: anomalia por ponto + PREDEP (paralelo por lag) ─────────
     n_seasons = len(SEASONS)
-    al_arr = np.full((n_seasons, N_LAGS, n_lat, n_lon), np.nan)
     ac_arr = np.full((n_seasons, N_LAGS, n_lat, n_lon), np.nan)
     r2_arr = np.full((n_seasons, N_LAGS, n_lat, n_lon), np.nan)
 
@@ -323,28 +308,24 @@ def process_mov(mov_name: str, n_boot: int = 5000, exp_n: int = 1):
             for lag in range(1, N_LAGS + 1)
         ]
 
-        print(f"  [{season}] 3 métricas × {n_lat * n_lon} pts "
+        print(f"  [{season}] PREDEP × {n_lat * n_lon} pts "
               f"× {N_LAGS} lags  (workers=8)...")
         t_pool = time.time()
         with mp.Pool(processes=8) as pool:
-            for lag, al_map, ac_map, r2_map in pool.imap_unordered(
+            for lag, ac_map, r2_map in pool.imap_unordered(
                 _compute_lag_worker, lag_args
             ):
-                al_arr[s_idx, lag - 1] = al_map
                 ac_arr[s_idx, lag - 1] = ac_map
                 r2_arr[s_idx, lag - 1] = r2_map
         print(f"  [{season}] Pool finalizado em {time.time() - t_pool:.1f}s")
 
         for li in range(N_LAGS):
-            v = int(np.sum(~np.isnan(al_arr[s_idx, li])))
+            v = int(np.sum(~np.isnan(ac_arr[s_idx, li])))
             print(f"    Lag {li + 1:2d}: {v}/{n_lat * n_lon} pts válidos")
 
     # ── 4. Salvar NetCDF ──────────────────────────────────────────────────────
     ds_out = xr.Dataset(
         {
-            "alpha_legacy": (
-                ["season", "lag", "latitude", "longitude"], al_arr
-            ),
             "alpha_core": (
                 ["season", "lag", "latitude", "longitude"], ac_arr
             ),
@@ -362,11 +343,8 @@ def process_mov(mov_name: str, n_boot: int = 5000, exp_n: int = 1):
     ds_out.attrs["description"] = (
         f"PREDEP granular ponto-a-ponto — bbox Uruguai vs MoV {mov_name}"
     )
-    ds_out["alpha_legacy"].attrs["description"] = (
-        "predep(X=MoV, Y=precip) — versão original"
-    )
     ds_out["alpha_core"].attrs["description"] = (
-        "predep(X=MoV, Y=precip) — versão modificada"
+        "predep(X=MoV, Y=precip): participa precip, condiciona MoV"
     )
     ds_out["r2"].attrs["description"] = "r² regressão linear — baseline"
 
@@ -393,6 +371,61 @@ def process_mov(mov_name: str, n_boot: int = 5000, exp_n: int = 1):
 LOCAL_XAVIER_FILE = (
     "data/processed/xavier_monthly/pr_monthly_1961_2019_BRAZIL_combined.nc"
 )
+LOCAL_SUBBACIAS_SHP = "data/clusters/uruguai/URUGUAI_recortado.shp"
+
+
+def precompute_cluster_masks():
+    """Calcula e salva as máscaras de cluster localmente."""
+    import numpy as np
+    import netCDF4 as nc4
+    import shapefile
+    from matplotlib.path import Path as MplPath
+    from pathlib import Path
+
+    print("Pré-computando máscaras de cluster (local)...")
+    with nc4.Dataset(LOCAL_XAVIER_FILE) as nc:
+        lats_all = nc.variables["latitude"][:]
+        lons_all = nc.variables["longitude"][:]
+
+    lat_mask = (lats_all >= URU_LAT_MIN) & (lats_all <= URU_LAT_MAX)
+    lon_mask = (lons_all >= URU_LON_MIN) & (lons_all <= URU_LON_MAX)
+    lats = lats_all[lat_mask]
+    lons = lons_all[lon_mask]
+    lons2d, lats2d = np.meshgrid(lons, lats)
+    grid_pts = np.column_stack([lons2d.ravel(), lats2d.ravel()])
+
+    sf = shapefile.Reader(LOCAL_SUBBACIAS_SHP, encoding="utf-8")
+    cluster_names, masks_flat = [], []
+    for rec, shape in zip(sf.records(), sf.shapes()):
+        name = rec["nome"]
+        mask = np.zeros(len(grid_pts), dtype=bool)
+        parts = list(shape.parts) + [len(shape.points)]
+        for i in range(len(shape.parts)):
+            pts = np.array(shape.points[parts[i]: parts[i + 1]])
+            if len(pts) >= 3:
+                mask |= MplPath(pts).contains_points(grid_pts)
+        cluster_names.append(name)
+        masks_flat.append(mask)
+        print(f"  {name}  pts={mask.sum():4d}")
+
+    out_path = Path("data/processed/uruguai_cluster_masks.npz")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    np.savez(
+        str(out_path),
+        cluster_names=np.array(cluster_names),
+        masks_flat=np.array(masks_flat, dtype=bool),
+        lats=lats,
+        lons=lons,
+    )
+    print(f"  Salvo: {out_path}")
+    return str(out_path)
+
+
+def upload_cluster_masks(masks_path: str):
+    print("\nUploading máscaras de cluster...")
+    with volume.batch_upload(force=True) as batch:
+        batch.put_file(masks_path, "input/uruguai_cluster_masks.npz")
+    print("  Máscaras enviadas ✓")
 
 
 def discover_mov_indices(mov_names=None):
@@ -555,9 +588,11 @@ def main(movs: str = "ONI,NIN04,SOI", n_boot: int = 5000, test: bool = False):
     print(f"Experimento: exp{exp_n}  |  Saída: {exp_dir}/")
     print(f"MoVs: {[m for m, _ in mov_list]}")
     print(f"Estações: {', '.join(SEASONS)}  |  Lags: 1–{N_LAGS}  |  n_boot={n_boot}")
-    print("Métricas: alpha_legacy, alpha_core, r2  (por pixel, sem agregação)")
+    print("Métricas: alpha_core, r2  (por pixel, apenas dentro da bacia)")
     print("=" * 80)
 
+    masks_path = precompute_cluster_masks()
+    upload_cluster_masks(masks_path)
     upload_xavier_data()
 
     all_results = []
