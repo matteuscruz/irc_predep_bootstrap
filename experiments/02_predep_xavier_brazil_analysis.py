@@ -10,10 +10,11 @@ import modal
 image = (
     modal.Image.debian_slim()
     .pip_install([
-        "pandas", "xarray[complete]", "numpy", "scipy", "astropy",
+        "pandas", "xarray[complete]", "numpy", "scipy",
         "matplotlib", "cartopy", "netcdf4", "h5netcdf", "tqdm"
     ])
     .apt_install(["libproj-dev", "proj-data", "proj-bin"])
+    .add_local_python_source("src")
 )
 
 app = modal.App("tna-predep-brazil", image=image)
@@ -27,44 +28,13 @@ BRAZIL_LON_MIN, BRAZIL_LON_MAX = -75.0, -34.0
 _PRECIP_ARR_GLOBAL = None
 
 
-def _ecdf(data):
-    import numpy as np
-    s = np.sort(data)
-    n = len(data)
-    return lambda x: np.searchsorted(s, x, side='right') / n
-
-
-def _predep_calc(X, Y, n_boot):
-    import numpy as np
-    import scipy.stats as ss
-    from astropy.stats import bayesian_blocks
-    try:
-        BX1 = np.random.choice(X, n_boot)
-        BX2 = np.random.choice(X, n_boot)
-        s_x = float(ss.gaussian_kde(BX1 - BX2).pdf(0))
-        edges_y = bayesian_blocks(Y)
-        ecdf_y = _ecdf(Y)
-        s_x_mid_y = 0.0
-        if edges_y.shape[0] > 1:
-            for k in range(1, edges_y.shape[0]):
-                bg, ed = edges_y[k - 1], edges_y[k]
-                X_c = X[(Y >= bg) & (Y < ed)]
-                if X_c.shape[0] == 0:
-                    continue
-                dx_c = np.random.choice(X_c, n_boot) - np.random.choice(X_c, n_boot)
-                s_x_mid_y += (ecdf_y(ed) - ecdf_y(bg)) * float(ss.gaussian_kde(dx_c).pdf(0))
-            return float((s_x_mid_y - s_x) / s_x_mid_y)
-        return float('nan')
-    except Exception:
-        return float('nan')
-
-
 def _compute_lag_worker(args):
     """Worker: calcula alpha_map completo para um lag. Usa _PRECIP_ARR_GLOBAL via fork."""
     import numpy as np
     import warnings
     import time as _time
     from tqdm import tqdm
+    from src.predep_calculation.core import predep
     warnings.filterwarnings('ignore')
 
     lag, mov_aligned, n_lat, n_lon, n_boot = args
@@ -82,7 +52,7 @@ def _compute_lag_worker(args):
             mv_v = mov_aligned[mask]
             if len(np.unique(mv_v)) < 3 or len(np.unique(pp_v)) < 3:
                 continue
-            alpha_map[i, j] = _predep_calc(pp_v, mv_v, n_boot)
+            alpha_map[i, j] = predep(mv_v, pp_v, n_boot)
     elapsed = _time.time() - t0
     valid = int(np.sum(~np.isnan(alpha_map)))
     print(f"  Lag {lag:2d} finalizado em {elapsed/60:.1f}min — {valid} pontos válidos", flush=True)

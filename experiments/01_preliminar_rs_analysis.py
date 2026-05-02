@@ -134,12 +134,6 @@ def run_rs_analysis():
         for lag in range(n_lags):
             print(f"🔄 Lag {lag}...", end=" ", flush=True)
             
-            # Debug: verificar índices para um ano intermediário
-            if lag <= 2:  # Apenas para os primeiros lags
-                mid_year = len(precip_seasonal.time) // 2
-                test_idx = mid_year * 12 + season_offset - lag  
-                print(f"\n   DEBUG lag {lag}: ano {mid_year} → idx {test_idx} (max {len(mov_values)-1})", end=" ")
-            
             alpha_map = np.full((len(lats), len(lons)), np.nan)
             
             for i in range(len(lats)):

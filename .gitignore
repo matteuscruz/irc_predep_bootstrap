@@ -24,11 +24,15 @@ share/python-wheels/
 MANIFEST
 
 # Virtual Environment
+.venv/
 venv/
 env/
 ENV/
 env.bak/
 venv.bak/
+
+# Referências / PDFs locais
+references/
 
 # IDE
 .vscode/
@@ -38,20 +42,16 @@ venv.bak/
 *~
 
 # Data
-data/raw/*/
-data/processed/*/
+data/raw/
+data/processed/
 !data/raw/mov_indices/*.csv
 !data/input/*.csv
-!data/.gitkeep
-!data/README.md
-# Excluir NetCDF grandes
+
+# NetCDF / binários grandes
 *.nc
 
 # Results
-results/**/*.nc
-results/**/*.png
-results/**/*.pdf
-!results/**/.gitkeep
+results/
 
 # Logs
 logs/*.log
@@ -63,6 +63,7 @@ checkpoints/
 
 # Notebooks
 .ipynb_checkpoints
+notebooks/
 
 # OS
 .DS_Store

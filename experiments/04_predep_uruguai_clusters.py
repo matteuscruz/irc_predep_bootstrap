@@ -25,17 +25,20 @@ Estrutura Modal (idêntica ao experimento 03):
 import modal
 
 # ── Imagem Modal ──────────────────────────────────────────────────────────────
-image = modal.Image.debian_slim().pip_install(
-    [
-        "pandas",
-        "xarray[complete]",
-        "numpy",
-        "scipy",
-        "astropy",
-        "matplotlib",
-        "netcdf4",
-        "h5netcdf",
-    ]
+image = (
+    modal.Image.debian_slim()
+    .pip_install(
+        [
+            "pandas",
+            "xarray[complete]",
+            "numpy",
+            "scipy",
+            "matplotlib",
+            "netcdf4",
+            "h5netcdf",
+        ]
+    )
+    .add_local_python_source("src")
 )
 
 app = modal.App("predep-uruguai-clusters", image=image)
@@ -59,48 +62,6 @@ SEASON_MONTHS = {
 SEASON_MONTH_MAP = {"DJF": 1, "MAM": 4, "JJA": 7, "SON": 10}
 
 
-def _ecdf(data):
-    import numpy as np
-
-    s = np.sort(data)
-    n = len(s)
-    return lambda x: np.searchsorted(s, x, side="right") / n
-
-
-def _predep_calc(X, Y, n_boot=5000):
-    import numpy as np
-    import scipy.stats as ss
-    from astropy.stats import bayesian_blocks
-
-    try:
-        BX1 = np.random.choice(X, n_boot)
-        BX2 = np.random.choice(X, n_boot)
-        s_x = float(ss.gaussian_kde(BX1 - BX2).pdf(0))
-        edges_y = bayesian_blocks(Y)
-        ecdf_y = _ecdf(Y)
-        s_x_mid_y = 0.0
-        if edges_y.shape[0] > 1:
-            for k in range(1, edges_y.shape[0]):
-                bg, ed = edges_y[k - 1], edges_y[k]
-                X_c = X[(Y >= bg) & (Y < ed)]
-                if X_c.shape[0] < 2 or len(np.unique(X_c)) < 2:
-                    continue
-                dx_c = np.random.choice(X_c, n_boot) - np.random.choice(
-                    X_c, n_boot
-                )
-                if np.std(dx_c) == 0:
-                    continue
-                s_x_mid_y += (ecdf_y(ed) - ecdf_y(bg)) * float(
-                    ss.gaussian_kde(dx_c).pdf(0)
-                )
-            if s_x_mid_y == 0:
-                return float("nan")
-            return float((s_x_mid_y - s_x) / s_x_mid_y)
-        return float("nan")
-    except Exception:
-        return float("nan")
-
-
 def _compute_lag_worker(args):
     """
     Worker: para um lag e uma estação, alinha o MoV com a série de anomalias
@@ -113,6 +74,7 @@ def _compute_lag_worker(args):
     """
     import numpy as np
     import warnings
+    from src.predep_calculation.core import predep
 
     warnings.filterwarnings("ignore")
 
@@ -139,7 +101,7 @@ def _compute_lag_worker(args):
         if len(np.unique(X)) < 3 or len(np.unique(Y)) < 3:
             results[cname] = np.nan
             continue
-        results[cname] = _predep_calc(X, Y, n_boot)
+        results[cname] = predep(X, Y, n_boot)
 
     return lag, results
 

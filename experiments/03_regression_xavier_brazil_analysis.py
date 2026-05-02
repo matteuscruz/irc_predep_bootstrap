@@ -19,6 +19,7 @@ image = (
         "matplotlib", "cartopy", "netcdf4", "h5netcdf", "tqdm"
     ])
     .apt_install(["libproj-dev", "proj-data", "proj-bin"])
+    .add_local_python_source("src")
 )
 
 app = modal.App("regression-predep-brazil", image=image)
@@ -32,21 +33,13 @@ BRAZIL_LON_MIN, BRAZIL_LON_MAX = -75.0, -34.0
 _PRECIP_ARR_GLOBAL = None
 
 
-def _regression_calc(X, Y):
-    import scipy.stats as ss
-    try:
-        result = ss.linregress(Y, X)
-        return float(result.rvalue ** 2)
-    except Exception:
-        return float('nan')
-
-
 def _compute_lag_worker(args):
     """Worker: calcula r2_map para um lag. Usa _PRECIP_ARR_GLOBAL via fork."""
     import numpy as np
     import warnings
     import time as _time
     from tqdm import tqdm
+    from src.regression_calculation.core import regression_calc
     warnings.filterwarnings('ignore')
 
     lag, mov_aligned, n_lat, n_lon = args
@@ -67,7 +60,7 @@ def _compute_lag_worker(args):
             mv_v = mov_aligned[mask]
             if len(np.unique(mv_v)) < 3 or len(np.unique(pp_v)) < 3:
                 continue
-            r2_map[i, j] = _regression_calc(mv_v, pp_v)
+            r2_map[i, j] = regression_calc(mv_v, pp_v)
     elapsed = _time.time() - t0
     valid = int(np.sum(~np.isnan(r2_map)))
     print(

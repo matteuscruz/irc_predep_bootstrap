@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
-Comparação PREDEP Legacy vs Core vs Regressão — Clusters da Bacia do Uruguai
+Comparação PREDEP vs Regressão — Clusters da Bacia do Uruguai
 
-Compara três métricas de previsibilidade nos 4 clusters da bacia do Uruguai:
-  - alpha_legacy : src/predep_calculation/legacy.py  — predep(X=precip, Y=MoV)
-  - alpha_core   : src/predep_calculation/core.py    — predep(X=MoV, Y=precip)
-  - r2           : src/regression_calculation/core.py — r² linear como baseline
+Compara duas métricas de previsibilidade nos 4 clusters da bacia do Uruguai:
+  - alpha_core : src/predep_calculation/core.py    — predep(X=MoV, Y=precip)
+  - r2         : src/regression_calculation/core.py — r² linear como baseline
 
 Aggregação espacial idêntica ao experimento 04 (integração trapezoidal cos(lat)).
 Estrutura Modal idêntica: 1 container por MoV, pool de 8 workers por lag/estação.
@@ -18,17 +17,21 @@ Uso:
 
 import modal
 
-image = modal.Image.debian_slim().pip_install(
-    [
-        "pandas",
-        "xarray[complete]",
-        "numpy",
-        "scipy",
-        "astropy",
-        "matplotlib",
-        "netcdf4",
-        "h5netcdf",
-    ]
+image = (
+    modal.Image.debian_slim()
+    .pip_install(
+        [
+            "pandas",
+            "xarray[complete]",
+            "numpy",
+            "scipy",
+            "astropy",
+            "matplotlib",
+            "netcdf4",
+            "h5netcdf",
+        ]
+    )
+    .add_local_python_source("src")
 )
 
 app    = modal.App("predep-comparison-uruguai", image=image)
@@ -52,74 +55,6 @@ SEASON_MONTH_MAP = {"DJF": 1, "MAM": 4, "JJA": 7, "SON": 10}
 DEFAULT_MOVS = ["ONI", "NIN04", "SOI"]
 
 
-# ── Funções de cálculo (inlineadas — Modal não acessa src/) ───────────────────
-
-def _ecdf(data):
-    import numpy as np
-    s = np.sort(data)
-    n = len(s)
-    return lambda x: np.searchsorted(s, x, side="right") / n
-
-
-def _predep_core(X, Y, n_boot=5000):
-    """
-    PREDEP: X = preditor (MoV), Y = target (precip, particionado).
-    Mede quanto o conhecimento de Y reduz a incerteza sobre X.
-    alpha = (s(X|Y) - s(X)) / s(X|Y)
-    """
-    import numpy as np
-    import scipy.stats as ss
-    from astropy.stats import bayesian_blocks
-
-    try:
-        BX1 = np.random.choice(X, n_boot)
-        BX2 = np.random.choice(X, n_boot)
-        diff_x = BX1 - BX2
-        if np.std(diff_x) == 0:
-            return float("nan")
-        s_x = float(ss.gaussian_kde(diff_x).pdf(0))
-
-        edges_y = bayesian_blocks(Y)
-        ecdf_y  = _ecdf(Y)
-
-        s_x_mid_y = 0.0
-        if edges_y.shape[0] > 1:
-            for k in range(1, edges_y.shape[0]):
-                bg, ed = edges_y[k - 1], edges_y[k]
-                x_c = X[(Y >= bg) & (Y < ed)]
-                if x_c.shape[0] < 2 or len(np.unique(x_c)) < 2:
-                    continue
-                dx_c = np.random.choice(x_c, n_boot) - np.random.choice(x_c, n_boot)
-                if np.std(dx_c) == 0:
-                    continue
-                s_x_mid_y += (ecdf_y(ed) - ecdf_y(bg)) * float(
-                    ss.gaussian_kde(dx_c).pdf(0)
-                )
-            if s_x_mid_y == 0:
-                return float("nan")
-            return float((s_x_mid_y - s_x) / s_x_mid_y)
-        return float("nan")
-    except Exception:
-        return float("nan")
-
-
-def _regression(X, Y):
-    """
-    r² da regressão linear simples (src/regression_calculation/core.py).
-    Simétrico: r²(X,Y) == r²(Y,X).
-    """
-    import numpy as np
-    import scipy.stats as ss
-
-    try:
-        X = np.asarray(X, dtype=float)
-        Y = np.asarray(Y, dtype=float)
-        if len(X) < 3 or len(np.unique(X)) < 3 or len(np.unique(Y)) < 3:
-            return float("nan")
-        result = ss.linregress(X, Y)
-        return float(result.rvalue ** 2)
-    except Exception:
-        return float("nan")
 
 
 # ── Worker ────────────────────────────────────────────────────────────────────
@@ -135,18 +70,20 @@ def _compute_lag_worker(args):
     """
     import numpy as np
     import warnings
+    from src.predep_calculation.core import predep
+    from src.regression_calculation.core import regression_calc
 
     warnings.filterwarnings("ignore")
 
-    lag, cluster_season_data, mov_lookup, season_month, n_boot = args
+    lag, cluster_season_data, mov_lookup, n_boot = args
 
     results = {}
-    for cname, (anomaly, years) in cluster_season_data.items():
-        n_years = len(years)
-        mov_aligned = np.full(n_years, np.nan)
-        for k in range(n_years):
-            tm = season_month - lag
-            ty = int(years[k])
+    for cname, (anomaly, s_years, s_months) in cluster_season_data.items():
+        n_obs = len(s_years)
+        mov_aligned = np.full(n_obs, np.nan)
+        for k in range(n_obs):
+            tm = int(s_months[k]) - lag
+            ty = int(s_years[k])
             while tm <= 0:
                 tm += 12
                 ty -= 1
@@ -164,8 +101,8 @@ def _compute_lag_worker(args):
             results[cname] = (float("nan"), float("nan"))
             continue
 
-        ac = _predep_core(X, Y, n_boot)
-        r2 = _regression(X, Y)
+        ac = predep(X, Y, n_boot, method="bayesian_blocks")
+        r2 = regression_calc(X, Y)
 
         results[cname] = (ac, r2)
 
@@ -258,28 +195,23 @@ def process_mov(mov_name: str, n_boot: int = 5000, exp_n: int = 1):
         cluster_monthly[cname] = pr_cluster
         print(f"  {cname}  pts={mask.sum():4d}  pr_mean={pr_cluster.mean():.4e}")
 
-    # ── 4. Agregação sazonal anual + anomalia ─────────────────────────────────
+    # ── 4. Anomalia mensal por cluster ────────────────────────────────────────
     cluster_seasonal = {s: {} for s in SEASONS}
     for season in SEASONS:
-        s_months     = SEASON_MONTHS[season]
-        s_mask       = np.isin(time_months, s_months)
-        s_years_raw  = time_years[s_mask]
-        if season == "DJF":
-            # Dezembro de ano y pertence ao DJF do ano y+1 (Dec(y-1)+Jan(y)+Feb(y))
-            s_years = np.where(time_months[s_mask] == 12, s_years_raw + 1, s_years_raw)
-            unique_years = np.unique(s_years)
-            counts = np.array([np.sum(s_years == y) for y in unique_years])
-            unique_years = unique_years[counts == 3]
-        else:
-            s_years      = s_years_raw
-            unique_years = np.unique(s_years)
-        for cname, pr_monthly in cluster_monthly.items():
-            pr_s      = pr_monthly[s_mask]
-            pr_annual = np.array([pr_s[s_years == y].mean() for y in unique_years])
-            anomaly   = pr_annual - pr_annual.mean()
-            cluster_seasonal[season][cname] = (anomaly, unique_years)
+        s_mask         = np.isin(time_months, SEASON_MONTHS[season])
+        s_times_years  = time_years[s_mask]
+        s_times_months = time_months[s_mask]
+        n_obs          = int(s_mask.sum())
+        for cname, pr_monthly_series in cluster_monthly.items():
+            # Climatologia mensal do cluster (média de cada mês calendar)
+            clim_c = np.array([
+                pr_monthly_series[time_months == m].mean() for m in range(1, 13)
+            ])
+            pr_s    = pr_monthly_series[s_mask]
+            anomaly = pr_s - clim_c[s_times_months - 1]
+            cluster_seasonal[season][cname] = (anomaly, s_times_years, s_times_months)
         anom_ex = next(iter(cluster_seasonal[season].values()))[0].mean()
-        print(f"  {season}: {len(unique_years)} anos  anom_mean={anom_ex:+.4e}")
+        print(f"  {season}: {n_obs} meses  anom_mean={anom_ex:+.4e}")
 
     # ── 5. MoV mensal ─────────────────────────────────────────────────────────
     mov_df = pd.read_csv(f"/data/input/{mov_name}_indice_data.csv")
@@ -307,11 +239,10 @@ def process_mov(mov_name: str, n_boot: int = 5000, exp_n: int = 1):
     r2_arr         = np.full((n_seasons, n_clusters, N_LAGS), np.nan)
 
     for s_idx, season in enumerate(SEASONS):
-        season_month = SEASON_MONTH_MAP[season]
         cluster_data = cluster_seasonal[season]
 
         lag_args = [
-            (lag, cluster_data, mov_lookup, season_month, n_boot)
+            (lag, cluster_data, mov_lookup, n_boot)
             for lag in range(1, N_LAGS + 1)
         ]
 
@@ -352,7 +283,7 @@ def process_mov(mov_name: str, n_boot: int = 5000, exp_n: int = 1):
         f"PREDEP + r² — clusters Uruguai vs MoV {mov_name}"
     )
     ds_out["alpha_core"].attrs["description"] = (
-        "predep(X=MoV, Y=precip): particiona precip, condiciona MoV"
+        "predep(X=MoV, Y=precip): alpha_{precip|MoV} — particiona MoV via Ward k=sqrt(N)"
     )
     ds_out["r2"].attrs["description"] = "r² regressão linear — baseline"
 

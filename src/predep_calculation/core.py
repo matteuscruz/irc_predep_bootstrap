@@ -1,26 +1,19 @@
 import numpy as np
 import scipy.stats as ss
-from astropy.stats import bayesian_blocks
+from scipy.cluster.hierarchy import fcluster, linkage
 
 
-def _ecdf(data):
-    s = np.sort(data)
-    n = len(s)
-    return lambda x: np.searchsorted(s, x, side="right") / n
-
-
-def predep(X, Y, n_boot=10000):
+def predep(X, Y, n_boot=10000, method="ward"):
     """
-    PREDEP α_{Y|X}: mede quanto o conhecimento de X (preditor) reduz a incerteza sobre Y (resposta).
+    PREDEP α_{Y|X}: mede quanto X prediz Y.
 
-    Convenção: X = preditor (ex: índice MoV), Y = resposta (ex: precipitação).
-    α = (s(Y|X) − s(Y)) / s(Y|X)
-    - 0: X e Y independentes
-    - 1: X prediz Y perfeitamente
+    method='ward'            : Hierarchical Clustering Ward k=√N (Algorithm 1 do paper)
+    method='bayesian_blocks' : Bayesian Blocks (astropy) para particionamento de X
     """
     try:
         X = np.asarray(X, dtype=float)
         Y = np.asarray(Y, dtype=float)
+        N = len(X)
 
         BY1 = np.random.choice(Y, n_boot)
         BY2 = np.random.choice(Y, n_boot)
@@ -29,29 +22,35 @@ def predep(X, Y, n_boot=10000):
             return np.nan
         s_y = float(np.squeeze(ss.gaussian_kde(diff_y).pdf(0)))
 
-        edges_x = bayesian_blocks(X)
-        ecdf_x = _ecdf(X)
+        if method == "ward":
+            k = max(2, int(np.sqrt(N)))
+            Z = linkage(X.reshape(-1, 1), method="ward")
+            labels = fcluster(Z, k, criterion="maxclust") - 1
+            bins = [labels == c for c in range(k)]
+        elif method == "bayesian_blocks":
+            from astropy.stats import bayesian_blocks
+            edges = bayesian_blocks(X)
+            if len(edges) < 2:
+                return np.nan
+            bins = [(X >= edges[i - 1]) & (X < edges[i]) for i in range(1, len(edges))]
+            bins[-1] = bins[-1] | (X == edges[-1])  # último bin fechado à direita
+        else:
+            raise ValueError(f"method deve ser 'ward' ou 'bayesian_blocks': {method!r}")
 
         s_y_mid_x = 0.0
-        if edges_x.shape[0] > 1:
-            for i in range(1, edges_x.shape[0]):
-                bg, ed = edges_x[i - 1], edges_x[i]
-                y_mid_x = Y[(X >= bg) & (X < ed)]
-                if y_mid_x.shape[0] < 2 or len(np.unique(y_mid_x)) < 2:
-                    continue
-                dy_c = (
-                    np.random.choice(y_mid_x, n_boot)
-                    - np.random.choice(y_mid_x, n_boot)
-                )
-                if np.std(dy_c) == 0:
-                    continue
-                p_range = ecdf_x(ed) - ecdf_x(bg)
-                kde_val = float(np.squeeze(ss.gaussian_kde(dy_c).pdf(0)))
-                s_y_mid_x += p_range * kde_val
+        for idx in bins:
+            y_bin = Y[idx]
+            if len(y_bin) < 2 or len(np.unique(y_bin)) < 2:
+                continue
+            p = idx.sum() / N
+            dy_c = np.random.choice(y_bin, n_boot) - np.random.choice(y_bin, n_boot)
+            if np.std(dy_c) == 0:
+                continue
+            kde_val = float(np.squeeze(ss.gaussian_kde(dy_c).pdf(0)))
+            s_y_mid_x += p * kde_val
 
-            if s_y_mid_x == 0:
-                return np.nan
-            return float((s_y_mid_x - s_y) / s_y_mid_x)
-        return np.nan
+        if s_y_mid_x == 0:
+            return np.nan
+        return float((s_y_mid_x - s_y) / s_y_mid_x)
     except Exception:
         return np.nan
