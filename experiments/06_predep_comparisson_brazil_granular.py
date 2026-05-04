@@ -23,6 +23,7 @@ image = (
             "numpy",
             "scipy",
             "astropy",
+            "statsmodels",
             "matplotlib",
             "netcdf4",
             "h5netcdf",
@@ -146,7 +147,7 @@ def _compute_lag_worker(args):
                 X = mov_aligned[valid]
                 Y = pp[valid]
                 if len(np.unique(X)) >= 3 and len(np.unique(Y)) >= 3:
-                    ac_map[i, j] = predep(X, Y, n_boot, method="bayesian_blocks")
+                    ac_map[i, j] = predep(X, Y, n_boot)
                     r2_map[i, j] = regression_calc(X, Y)
 
             done += 1
@@ -189,6 +190,7 @@ def process_mov(
     exp_n: int = 1,
     debug: bool = False,
     basin_name: str = "brazil",
+    use_anomaly: bool = True,
 ):
     """
     Container Modal: PREDEP granular ponto-a-ponto por bacia.
@@ -247,9 +249,10 @@ def process_mov(
     pr_values   = ds_crop.pr.values  # (n_time, n_lat, n_lon)
 
     # Climatologia mensal: média de cada mês calendar em todos os anos
-    monthly_clim = np.stack([
-        pr_values[time_months == m].mean(axis=0) for m in range(1, 13)
-    ], axis=0)  # (12, n_lat, n_lon)
+    if use_anomaly:
+        monthly_clim = np.stack([
+            pr_values[time_months == m].mean(axis=0) for m in range(1, 13)
+        ], axis=0)  # (12, n_lat, n_lon)
 
     print(f"  Xavier: {pr_values.shape}  "
           f"({time_idx[0].date()} → {time_idx[-1].date()})")
@@ -272,7 +275,7 @@ def process_mov(
     print(f"\n  MoV '{mov_name}': "
           f"{int(mov_monthly['value'].notna().sum())} meses válidos")
 
-    # ── 3. Por estação: anomalia por ponto + PREDEP (paralelo por lag) ─────────
+    # ── 3. Por estação: precipitação por ponto + PREDEP (paralelo por lag) ──────
     n_seasons = len(SEASONS)
     ac_arr = np.full((n_seasons, N_LAGS, n_lat, n_lon), np.nan)
     r2_arr = np.full((n_seasons, N_LAGS, n_lat, n_lon), np.nan)
@@ -290,16 +293,16 @@ def process_mov(
         s_times_months = time_months[s_mask]
         n_obs          = int(s_mask.sum())
 
-        # Anomalia mensal: subtrai climatologia do mês calendar
-        pr_s    = pr_values[s_mask]                    # (n_obs, n_lat, n_lon)
-        clim_s  = monthly_clim[s_times_months - 1]     # (n_obs, n_lat, n_lon)
-        anomaly = pr_s - clim_s
+        pr_s = pr_values[s_mask]                        # (n_obs, n_lat, n_lon)
+        if use_anomaly:
+            clim_s  = monthly_clim[s_times_months - 1] # (n_obs, n_lat, n_lon)
+            pr_s    = pr_s - clim_s
 
         if debug:
-            print(f"\n  {season}: {n_obs} meses  anom_std={float(anomaly.std()):.4e}")
+            print(f"\n  {season}: {n_obs} meses  std={float(pr_s.std()):.4e}")
 
         # Expõe array para os workers via fork
-        _PRECIP_ARR_GLOBAL = anomaly
+        _PRECIP_ARR_GLOBAL = pr_s
 
         # Pré-alinha MoV para cada mês × lag
         lag_args = [
@@ -354,8 +357,11 @@ def process_mov(
             "longitude": lons,
         },
     )
+    mode_label = "anomaly" if use_anomaly else "raw_monthly"
+    ds_out.attrs["precip_mode"] = mode_label
     ds_out.attrs["description"] = (
-        f"PREDEP granular ponto-a-ponto — bacia={basin_name} MoV={mov_name}"
+        f"PREDEP granular ponto-a-ponto — bacia={basin_name} MoV={mov_name} "
+        f"precip_mode={mode_label}"
     )
     ds_out["alpha_core"].attrs["description"] = (
         "alpha_{precip|MoV} — Bayesian Blocks, dados mensais"
@@ -622,6 +628,7 @@ def main(
     basins: str = "all",
     debug: bool = False,
     test: bool = False,
+    use_anomaly: bool = True,
 ):
     """
     PREDEP granular ponto-a-ponto no Brasil, por bacia.
@@ -696,7 +703,7 @@ def main(
             if bname not in BASINS:
                 continue
             print(f"  [{b_idx}/{len(basin_list)}] bacia: {bname}")
-            result = process_mov.remote(mov_name, n_boot, exp_n, debug, bname)
+            result = process_mov.remote(mov_name, n_boot, exp_n, debug, bname, use_anomaly)
             download_results(mov_name, exp_n)
             all_results.append(result)
 
