@@ -197,7 +197,7 @@ def _compute_lag_worker(args):
 # ── Função Modal ──────────────────────────────────────────────────────────────
 
 @app.function(
-    memory=4096,
+    memory=8192,
     cpu=8,
     timeout=86400,  # 24h — máximo do Modal
     volumes={"/data": volume},
@@ -206,6 +206,7 @@ def process_mov(
     mov_name: str,
     n_boot: int = 5000,
     exp_n: int = 1,
+    exp_name: str = "",
     debug: bool = False,
     basin_name: str = "brazil",
     use_anomaly: bool = True,
@@ -390,9 +391,12 @@ def process_mov(
     )
     ds_out["r2"].attrs["description"] = "r² regressão linear — baseline"
 
-    out_dir = Path(f"/data/results/predep_granular_brazil/exp{exp_n}/{mov_name}")
+    _exp_name = exp_name or f"exp{exp_n:02d}"
+    out_dir = Path(f"/data/results/predep_granular_brazil/{_exp_name}/{mov_name}")
     out_dir.mkdir(parents=True, exist_ok=True)
-    if lags == [0]:
+    if basin_name == "brazil":
+        nc_file = out_dir / f"{mov_name}_predep_granular_seasonal.nc"
+    elif lags == [0]:
         nc_file = out_dir / f"{mov_name}_{basin_name}_lag0_seasonal.nc"
     else:
         nc_file = out_dir / f"{mov_name}_{basin_name}_predep_granular_seasonal.nc"
@@ -516,19 +520,20 @@ def upload_mov_index(mov_name: str, local_path):
     print(f"  {mov_name}: {len(mov_csv)} registros ({yr_min}–{yr_max})")
 
 
-def download_results(mov_name: str, exp_n: int = 1):
+def download_results(mov_name: str, exp_n: int = 1, exp_name: str = ""):
     import subprocess
     import shutil
     from pathlib import Path
 
-    local_dir = Path(f"results/predep_granular_brazil/exp{exp_n}/{mov_name}")
+    _exp_name = exp_name or f"exp{exp_n:02d}"
+    local_dir = Path(f"results/predep_granular_brazil/{_exp_name}/{mov_name}")
     local_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"\nBaixando resultados de {mov_name} → exp{exp_n}...")
+    print(f"\nBaixando resultados de {mov_name} → {_exp_name}...")
     result = subprocess.run(
         [
             "modal", "volume", "get", "xavier-data",
-            f"results/predep_granular_brazil/exp{exp_n}/{mov_name}",
+            f"results/predep_granular_brazil/{_exp_name}/{mov_name}",
             str(local_dir),
         ],
         capture_output=True,
@@ -720,6 +725,7 @@ def main(
     test: bool = False,
     use_anomaly: bool = True,
     exp_n: int = 0,
+    exp_name: str = "",
     lag_zero: bool = False,
     lags: str = "1-12",
 ):
@@ -753,32 +759,70 @@ def main(
         None if movs.strip().lower() == "all"
         else [m.strip() for m in movs.split(",")]
     )
-    mov_list   = discover_mov_indices(mov_names)
-    basin_list = (
+    mov_list    = discover_mov_indices(mov_names)
+    full_brazil = basins.strip().lower() == "brazil"
+    basin_list  = (
         list(BASINS.keys()) if basins.strip().lower() == "all"
-        else [b.strip() for b in basins.split(",")]
+        else ([] if full_brazil else [b.strip() for b in basins.split(",")])
     )
 
     if test:
-        mov_list   = mov_list[:1]
-        basin_list = basin_list[:1]
+        mov_list = mov_list[:1]
 
-    if exp_n <= 0:
+    if exp_name:
+        _exp_name = exp_name
+    elif exp_n <= 0:
         exp_n = get_next_exp_n("results/predep_granular_brazil")
-    exp_dir = Path(f"results/predep_granular_brazil/exp{exp_n}")
+        _exp_name = f"exp{exp_n:02d}"
+    else:
+        _exp_name = f"exp{exp_n:02d}"
+    exp_dir = Path(f"results/predep_granular_brazil/{_exp_name}")
 
+    modo = "BRASIL TODO (sem máscara)" if full_brazil else f"{len(basin_list)} BACIAS"
     print("=" * 80)
-    print("PREDEP GRANULAR — BRASIL POR BACIA — MODAL")
+    print(f"PREDEP GRANULAR — {modo} — MODAL")
     print(f"Início: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"Experimento: exp{exp_n}  |  Saída: {exp_dir}/")
+    print(f"Experimento: {_exp_name}  |  Saída: {exp_dir}/")
     print(f"MoVs:   {[m for m, _ in mov_list]}")
-    print(f"Bacias: {basin_list}")
     print(f"Estações: {', '.join(SEASONS)}  |  Lags: {lags}  |  n_boot={n_boot}")
     print("=" * 80)
 
     upload_xavier_data()
 
-    # Pré-calcula e sobe máscaras de todas as bacias
+    # ── Modo Brasil todo: spawn paralelo por MoV, sem máscaras de bacia ─────────
+    if full_brazil:
+        print(f"\n🚀 Subindo índices e lançando {len(mov_list)} MoVs em paralelo...")
+        futures = []
+        for mov_name, mov_path in mov_list:
+            upload_mov_index(mov_name, mov_path)
+            nc_final = exp_dir / mov_name / f"{mov_name}_predep_granular_seasonal.nc"
+            if nc_final.exists():
+                print(f"  {mov_name} — já existe, pulando")
+                continue
+            f = process_mov.spawn(
+                mov_name, n_boot, exp_n, _exp_name, debug, "brazil", use_anomaly, lags
+            )
+            futures.append((mov_name, f))
+            print(f"  {mov_name} — lançado ✓")
+
+        start_total = time.time()
+        all_results = []
+        print(f"\n⏳ Aguardando {len(futures)} containers...")
+        for mov_name, f in futures:
+            result = f.get()
+            all_results.append(result)
+            print(f"  ✅ {mov_name} — {result.get('duration', 0)/60:.1f}min")
+            download_results(mov_name, exp_n, _exp_name)
+
+        total = time.time() - start_total
+        print("\n" + "=" * 80)
+        print("PREDEP GRANULAR BRASIL TODO — CONCLUÍDO!")
+        print(f"Tempo total: {total/60:.1f}min  ({total/3600:.2f}h)")
+        print(f"Resultados em: {exp_dir}/")
+        print("=" * 80)
+        return {"total_duration": total, "results": all_results}
+
+    # ── Modo por bacia: loop sequencial com merge ao final ───────────────────────
     print("\nCalculando máscaras das bacias...")
     xavier_lats, xavier_lons = get_xavier_grid()
     for bname in basin_list:
@@ -814,9 +858,9 @@ def main(
                     continue
                 print(f"  [{b_idx}/{len(basin_list)}] bacia: {bname} — calculando lag 0")
                 result = process_mov.remote(
-                    mov_name, n_boot, exp_n, debug, bname, use_anomaly, "0"
+                    mov_name, n_boot, exp_n, _exp_name, debug, bname, use_anomaly, "0"
                 )
-                download_results(mov_name, exp_n)
+                download_results(mov_name, exp_n, _exp_name)
                 patch_lag0_into_results(mov_name, bname, exp_n)
                 all_results.append(result)
                 continue
@@ -826,18 +870,16 @@ def main(
                 continue
             print(f"  [{b_idx}/{len(basin_list)}] bacia: {bname}")
             result = process_mov.remote(
-                mov_name, n_boot, exp_n, debug, bname, use_anomaly, lags
+                mov_name, n_boot, exp_n, _exp_name, debug, bname, use_anomaly, lags
             )
-            download_results(mov_name, exp_n)
+            download_results(mov_name, exp_n, _exp_name)
             all_results.append(result)
 
-            basin_nc = exp_dir / mov_name / f"{mov_name}_{bname}_predep_granular_seasonal.nc"
             if basin_nc.exists():
-                base_plots = Path("plots") / f"exp{exp_n}" / mov_name
+                base_plots = Path("plots") / _exp_name / mov_name
                 print(f"  Gerando plots para bacia {bname}...")
                 generate_plots_granular(basin_nc, mov_name, base_plots, basin_name=bname)
 
-        # Mescla todas as bacias num único NC
         print(f"\n  Mesclando {len(basin_list)} bacias...")
         nc_merged = merge_basin_results(mov_name, basin_list, exp_n)
 

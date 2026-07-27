@@ -16,10 +16,10 @@ Variáveis armazenadas por season:
 Saída: {out_dir}/{exp}/{MoV}/{SEASON}.parquet
 
 Uso:
-    python scripts/nc_to_parquet.py --exp exp01
-    python scripts/nc_to_parquet.py --exp exp01 --out-dir /caminho/para/results
-    python scripts/nc_to_parquet.py --all
-    python scripts/nc_to_parquet.py --all --lags 0,1,3,6,9,12
+    python src/data_processing/export/nc_to_parquet.py --exp exp01
+    python src/data_processing/export/nc_to_parquet.py --exp exp01 --out-dir /caminho/para/results
+    python src/data_processing/export/nc_to_parquet.py --all
+    python src/data_processing/export/nc_to_parquet.py --all --lags 0,1,3,6,9,12
 """
 
 import argparse
@@ -30,7 +30,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-ROOT = Path(__file__).parent.parent
+ROOT = Path(__file__).resolve().parents[3]
 RESULTS_DIR = ROOT / "results" / "predep_granular_brazil"
 DEFAULT_OUT = (
     ROOT.parent / "predep_visualization" / "results"

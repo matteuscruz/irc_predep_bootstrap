@@ -7,14 +7,14 @@ Para cada MoV em results/predep_granular_brazil/expN/:
   - Gera plots do Brasil completo (arquivo merged)
 
 Uso:
-  python scripts/generate_plots_exp.py --exp-n 21
-  python scripts/generate_plots_exp.py
-  python scripts/generate_plots_exp.py --exp-n 21 --movs "ONI,NAO"
-  python scripts/generate_plots_exp.py --exp-n 21 --lags "1,3,6,9,12"
+  python src/visualization/generate_plots_exp.py --exp-n 21
+  python src/visualization/generate_plots_exp.py
+  python src/visualization/generate_plots_exp.py --exp-n 21 --movs "ONI,NAO"
+  python src/visualization/generate_plots_exp.py --exp-n 21 --lags "1,3,6,9,12"
 
 Gerar PDFs por bacia (a partir de PNGs já gerados):
-  python scripts/generate_plots_exp.py --exp-n 21 --pdf-basin parana
-  python scripts/generate_plots_exp.py --exp-n 21 --pdf-basin parana --movs "ONI,AMO"
+  python src/visualization/generate_plots_exp.py --exp-n 21 --pdf-basin parana
+  python src/visualization/generate_plots_exp.py --exp-n 21 --pdf-basin parana --movs "ONI,AMO"
 """
 
 import argparse
@@ -24,7 +24,7 @@ from pathlib import Path
 
 from PIL import Image
 
-ROOT = Path(__file__).parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from src.visualization.cluster_plots import generate_plots_granular  # noqa: E402

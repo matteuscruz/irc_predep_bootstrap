@@ -51,7 +51,7 @@ def check_data():
             missing.append(file)
     
     if missing:
-        print("\n   Execute primeiro: python scripts/convert_xavier_daily_to_monthly.py")
+        print("\n   Execute primeiro: python tools/convert_xavier_daily_to_monthly.py")
         return False
     
     return True

@@ -22,6 +22,10 @@ from pathlib import Path
 
 import numpy as np
 
+# Importa as otimizações criadas
+from src.som_modeling.som_optimizer import optimize_som_topology
+from src.som_modeling.som_macro_clustering import perform_macro_clustering, get_som_weights
+
 # --- Import shim do MiniSom vendorizado (repo_root/minisom) ---------------
 _MINISOM_DIR = Path(__file__).resolve().parents[2] / "minisom"
 if str(_MINISOM_DIR) not in sys.path:
@@ -62,6 +66,8 @@ class RegimeResult:
     weights_flat: np.ndarray  # (som_x*som_y, n_features)
     kmeans_centers: np.ndarray  # (n_regimes, n_features)
     n_regimes: int
+    kmeans_results: dict = None
+    hierarchical_model: object = None
 
 
 def build_feature_matrix(
@@ -70,6 +76,8 @@ def build_feature_matrix(
     lags=None,
     standardize: bool = True,
     fill_value: float = DEFAULT_FILL,
+    season_filter: str = None,
+    strict: bool = False,
 ) -> FeatureBundle:
     """
     Lê os NCs Brazil-wide de cada MoV em exp_dir e monta a matriz de features.
@@ -135,13 +143,13 @@ def build_feature_matrix(
     # então slabs (MoV, lag, estação) totalmente NaN apenas não contribuem.
     finite = ~np.isnan(ac)
     footprint = np.any(finite, axis=(0, 1, 2))   # (n_lat, n_lon)
-    strict = np.all(finite, axis=(0, 1, 2))
-    valid_mask = footprint
+    complete = np.all(finite, axis=(0, 1, 2))
     print(
         f"  Cobertura: footprint={int(footprint.sum())} px | "
-        f"completos em todos MoV×lag×estação={int(strict.sum())} px"
+        f"completos em todos MoV×lag×estação={int(complete.sum())} px"
     )
 
+    valid_mask = complete if strict else footprint
     pixel_rc = np.argwhere(valid_mask)  # (n_pixels, 2)
 
     # Monta X_raw na ordem (mov, lag, season).
@@ -157,6 +165,20 @@ def build_feature_matrix(
     X_raw = np.column_stack(cols).astype(np.float64)
     X_raw = np.nan_to_num(X_raw, nan=fill_value)
     feature_index = np.array(feature_index, dtype=int)
+
+    # Filtro de estação: mantém apenas features da estação solicitada.
+    if season_filter is not None:
+        if season_filter not in seasons:
+            raise ValueError(
+                f"season_filter='{season_filter}' não encontrado; "
+                f"disponíveis: {seasons}"
+            )
+        sj = seasons.index(season_filter)
+        keep = feature_index[:, 2] == sj
+        X_raw = X_raw[:, keep]
+        feature_names = [fn for fn, k in zip(feature_names, keep.tolist()) if k]
+        feature_index = feature_index[keep]
+        seasons = [season_filter]
 
     if standardize:
         mean = X_raw.mean(axis=0)
@@ -183,9 +205,27 @@ def train_som(
     learning_rate: float = 0.5,
     num_iteration: int = 10000,
     seed: int = 42,
+    optimize: bool = False
 ):
-    """Treina um SOM quadrado sobre X. Retorna (som, metrics)."""
+    """Treina um SOM sobre X. Retorna (som, metrics)."""
     n, input_len = X.shape
+    
+    if optimize:
+        print("    [+] Otimizando topologia via Fronteira de Pareto (QE vs TE)...")
+        som, metrics_dict, pareto_results = optimize_som_topology(
+            X, learning_rate=learning_rate, num_iteration=num_iteration, random_seed=seed
+        )
+        metrics = {
+            "som_size": f"{metrics_dict['rows']}x{metrics_dict['cols']}",
+            "n_samples": n,
+            "n_features": input_len,
+            "quantization_error": metrics_dict['QE'],
+            "topographic_error": metrics_dict['TE'],
+            "pareto_results": pareto_results
+        }
+        return som, metrics
+
+    # Abordagem fixa original
     if not som_size:
         g = int(np.ceil(np.sqrt(5.0 * np.sqrt(n))))
         g = int(np.clip(g, 8, 30))
@@ -212,16 +252,29 @@ def train_som(
     return som, metrics
 
 
-def assign_regimes(som: MiniSom, X: np.ndarray, n_regimes: int = 7, seed: int = 42):
-    """Agrupa os neurônios (KMeans) em regimes e rotula cada pixel pelo seu BMU."""
-    from sklearn.cluster import KMeans
-
-    W = som.get_weights()                 # (g, g, input_len)
+def assign_regimes(som: MiniSom, X: np.ndarray, n_regimes: int = 7, seed: int = 42, auto_k: bool = False):
+    """Agrupa os neurônios em regimes e rotula cada pixel pelo seu BMU."""
+    W = som.get_weights()                 # (gx, gy, input_len)
     gx, gy, input_len = W.shape
     W_flat = W.reshape(-1, input_len)
-    n_regimes = int(min(n_regimes, W_flat.shape[0]))
+    
+    kmeans_results = None
+    hierarchical_model = None
 
-    km = KMeans(n_clusters=n_regimes, random_state=seed, n_init=10).fit(W_flat)
+    if auto_k:
+        print("    [+] Buscando o 'Cotovelo' ideal para o número de macro-clusters (K-Means)...")
+        kmeans_results = perform_macro_clustering(som, method='kmeans', k=None, max_k=15, random_seed=seed)
+        km = kmeans_results['model']
+        n_regimes = kmeans_results['elbow_k']
+        print(f"    [+] Cotovelo encontrado: K = {n_regimes}")
+        
+        # Gera modelo hierarquico apenas para ter o Dendrograma
+        hierarchical_model = perform_macro_clustering(som, method='hierarchical', k=n_regimes)['model']
+    else:
+        from sklearn.cluster import KMeans
+        n_regimes = int(min(n_regimes, W_flat.shape[0]))
+        km = KMeans(n_clusters=n_regimes, random_state=seed, n_init=10).fit(W_flat)
+        
     neuron_regime = km.labels_.reshape(gx, gy)
 
     win = som.win_map(X, return_indices=True)   # {(i,j): [idx,...]}
@@ -236,6 +289,7 @@ def assign_regimes(som: MiniSom, X: np.ndarray, n_regimes: int = 7, seed: int = 
     return RegimeResult(
         bmu_rc=bmu_rc, neuron_regime=neuron_regime, pixel_regime=pixel_regime,
         weights_flat=W_flat, kmeans_centers=km.cluster_centers_, n_regimes=n_regimes,
+        kmeans_results=kmeans_results, hierarchical_model=hierarchical_model
     )
 
 
@@ -245,6 +299,137 @@ def regime_to_grid(regime_result: RegimeResult, bundle: FeatureBundle) -> np.nda
     rc = bundle.pixel_rc
     grid[rc[:, 0], rc[:, 1]] = regime_result.pixel_regime
     return grid
+
+
+def auto_top_movs(bundle: FeatureBundle, k: int) -> list:
+    """Top-k MoVs por α médio bruto (sobre todas features e pixels)."""
+    n_mov = len(bundle.mov_names)
+    mov_ids = bundle.feature_index[:, 0]
+    scores = np.array([
+        bundle.X_raw[:, mov_ids == m].mean()
+        if np.any(mov_ids == m) else 0.0
+        for m in range(n_mov)
+    ])
+    return [bundle.mov_names[i] for i in np.argsort(scores)[::-1][:min(k, n_mov)]]
+
+
+_SEASON_MONTHS = {
+    "DJF": [12, 1, 2], "MAM": [3, 4, 5],
+    "JJA": [6, 7, 8],  "SON": [9, 10, 11],
+}
+
+
+def build_precip_bundle(
+    exp_dir,
+    precip_nc,
+    seasons=None,
+    standardize: bool = True,
+) -> FeatureBundle:
+    """
+    FeatureBundle cujas features são lat, lon e médias sazonais de precipitação
+    (mm/mês) do dataset Xavier. Pixels restritos ao footprint do PREDEP (exp_dir).
+
+    Features: ["lat", "lon", "precip_DJF", "precip_MAM", "precip_JJA", "precip_SON"]
+    (ou subconjunto se seasons for fornecido).
+    """
+    import xarray as xr
+    import pandas as pd
+
+    exp_dir = Path(exp_dir)
+    precip_nc = Path(precip_nc)
+    seasons = seasons or SEASONS
+
+    # Footprint do PREDEP para obter grade e máscara válida.
+    _ref = build_feature_matrix(exp_dir, standardize=False)
+    lats, lons = _ref.lats, _ref.lons
+    valid_mask, pixel_rc = _ref.valid_mask, _ref.pixel_rc
+    pix_lats = lats[pixel_rc[:, 0]]
+    pix_lons = lons[pixel_rc[:, 1]]
+
+    # Carrega precipitação Xavier.
+    ds = xr.open_dataset(precip_nc)
+    pr_lats = ds.latitude.values.astype(float)
+    pr_lons = ds.longitude.values.astype(float)
+
+    # Índices nearest-neighbor para cada pixel PREDEP na grade Xavier.
+    lat_idx = np.argmin(np.abs(pr_lats[:, None] - pix_lats[None, :]), axis=0)
+    lon_idx = np.argmin(np.abs(pr_lons[:, None] - pix_lons[None, :]), axis=0)
+    pr_vals = ds["pr"].values.astype(np.float64)  # (time, lat, lon)
+    pr_pixels = pr_vals[:, lat_idx, lon_idx]       # (time, n_pixels)
+    ds.close()
+
+    time_months = pd.DatetimeIndex(
+        xr.open_dataset(precip_nc).time.values
+    ).month.to_numpy()
+
+    # Monta features.
+    cols, feature_names, feature_index = [], [], []
+    # lat e lon normalizados (z-score feito na etapa de standardize abaixo).
+    cols.append(pix_lats)
+    feature_names.append("lat")
+    feature_index.append((0, -1, -1))
+    cols.append(pix_lons)
+    feature_names.append("lon")
+    feature_index.append((1, -1, -1))
+
+    for si, season in enumerate(seasons):
+        s_months = _SEASON_MONTHS[season]
+        mask_t = np.isin(time_months, s_months)
+        precip_s = pr_pixels[mask_t, :].mean(axis=0)
+        cols.append(precip_s)
+        feature_names.append(f"precip_{season}")
+        feature_index.append((2 + si, -1, si))
+
+    X_raw = np.column_stack(cols).astype(np.float64)
+    feature_index = np.array(feature_index, dtype=int)
+    # mov_names = feature names (lat, lon, precip_DJF, ...)
+    mov_names = feature_names[:]
+
+    if standardize:
+        mean = X_raw.mean(axis=0)
+        std = X_raw.std(axis=0)
+        std_safe = np.where(std == 0, 1.0, std)
+        X = (X_raw - mean) / std_safe
+        scaler_mean, scaler_std = mean, std_safe
+    else:
+        X = X_raw.copy()
+        scaler_mean = scaler_std = None
+
+    return FeatureBundle(
+        X=X, X_raw=X_raw, feature_names=feature_names, feature_index=feature_index,
+        mov_names=mov_names, lags=[], seasons=list(seasons),
+        lats=lats, lons=lons, valid_mask=valid_mask, pixel_rc=pixel_rc,
+        scaler_mean=scaler_mean, scaler_std=scaler_std,
+    )
+
+
+def seasonal_regimes(
+    som: MiniSom, regimes: RegimeResult, bundle: FeatureBundle,
+) -> dict:
+    """
+    Calcula o regime de cada pixel POR estação, usando apenas as features
+    daquela estação (distância parcial ao BMU no SOM treinado).
+
+    Requer bundle em feature_mode 'full' (season_idx >= 0). Retorna
+    {season_str: np.ndarray de shape (n_pixels,)}.
+    """
+    W = som.get_weights()   # (g, g, n_features)
+    gy = W.shape[1]
+    season_ids = bundle.feature_index[:, 2]
+    result = {}
+    for sj, season in enumerate(bundle.seasons):
+        keep = season_ids == sj
+        if not np.any(keep):
+            continue
+        X_s = bundle.X[:, keep]         # (n_pixels, n_s_feats)
+        W_s = W[:, :, keep]             # (g, g, n_s_feats)
+        # distância euclidiana parcial: (n_pixels, g*g)
+        diff = X_s[:, None, None, :] - W_s[None, :, :, :]
+        dist = np.linalg.norm(diff, axis=-1).reshape(X_s.shape[0], -1)
+        bmu_flat = dist.argmin(axis=1)
+        regime_s = regimes.neuron_regime.ravel()[bmu_flat]
+        result[season] = regime_s
+    return result
 
 
 def regime_fingerprints(regime_result: RegimeResult, bundle: FeatureBundle) -> dict:

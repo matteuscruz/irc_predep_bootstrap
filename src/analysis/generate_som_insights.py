@@ -16,10 +16,10 @@ Plots gerados em plots/exp{NN}/som/ (NÃO substituem os plots existentes):
   - som_insights_exp{NN}.pdf            tudo num PDF
 
 Uso:
-  python scripts/generate_som_insights.py
-  python scripts/generate_som_insights.py --exp-n 1
-  python scripts/generate_som_insights.py --exp-n 1 --movs "ONI,NAO" --som-size 10 --n-regimes 5
-  python scripts/generate_som_insights.py --exp-n 1 --lags all --no-standardize
+  python src/analysis/generate_som_insights.py
+  python src/analysis/generate_som_insights.py --exp-n 1
+  python src/analysis/generate_som_insights.py --exp-n 1 --movs "ONI,NAO" --som-size 10 --n-regimes 5
+  python src/analysis/generate_som_insights.py --exp-n 1 --lags all --no-standardize
 """
 
 import argparse
@@ -27,7 +27,7 @@ import shutil
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from src.analysis.som_insights import (  # noqa: E402
@@ -36,7 +36,7 @@ from src.analysis.som_insights import (  # noqa: E402
 )
 from src.visualization import som_plots  # noqa: E402
 from src.visualization.cluster_plots import _load_basin_outlines  # noqa: E402
-from scripts.generate_plots_exp import latest_exp, _make_pdf  # noqa: E402
+from src.visualization.generate_plots_exp import latest_exp, _make_pdf  # noqa: E402
 
 
 def main():
