@@ -1,143 +1,128 @@
-# PREDEP / MoV x Precipitacao
+# PREDEP / MoV × Precipitação
 
-Repositorio para analises PREDEP e regressao entre indices de modos de variabilidade (MoV) e precipitacao. Os experimentos pesados rodam no Modal (cloud) e sao disparados localmente via `modal run`.
+Análise de dependência preditiva (PREDEP) e regressão entre índices de modos de
+variabilidade (MoV) e precipitação. Os experimentos rodam no Modal (cloud) e são
+disparados localmente via `modal run`.
 
-## Requisitos
-
-- Python >= 3.9
-- pip
-- Dependencias do projeto (em `requirements.txt`)
-- Conta no Modal (obrigatoria para executar experimentos)
-
-### Instalacao local
+## Instalação
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-pip install modal
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt modal
+modal token new   # autenticar no Modal
 ```
 
-## Modal: autenticacao e verificacao
+## Dados (não versionados)
 
-1. Crie uma conta no Modal.
-2. Gere token local:
+Os dados não são incluídos no repositório. Estrutura esperada em `data/`:
+
+| Caminho | Descrição |
+|---|---|
+| `data/processed/xavier_monthly/pr_monthly_1961_2019_BRAZIL_combined.nc` | Precipitação mensal Xavier (1961–2019) |
+| `data/raw/mov_indices/*_indice*.csv` | Séries mensais de cada MoV |
+| `data/clusters/<bacia>/*.shp` | Shapefiles das 12 bacias hidrográficas |
+
+Bacias disponíveis: `amazonica`, `atlantico_leste`, `atlantico_nordeste`,
+`atlantico_nordeste_oriental`, `atlantico_sudeste`, `atlantico_sul`, `paraguai`,
+`parana`, `parnaiba`, `sao_francisco`, `tocantins`, `uruguai`.
+
+## Experimentos
+
+### Experimento 06 — PREDEP granular por bacia
 
 ```bash
-modal token new
+modal run experiments/06_predep_comparisson_brazil_granular.py [flags]
 ```
 
-3. Verifique a autenticacao:
+| Flag | Padrão | Descrição |
+|---|---|---|
+| `--movs` | `"ONI"` | MoVs separados por vírgula, ou `"all"` |
+| `--basins` | `"all"` | Bacias separadas por vírgula, ou `"all"` |
+| `--exp-n` | `0` | Reusar experimento existente (`0` = cria novo) |
+| `--lags` | `"1-12"` | Lags a calcular. Ex: `"0,1,3,6,9,12"` |
+| `--lag-zero` | `false` | Adiciona lag 0 a resultados existentes (pula bacias que já têm) |
+| `--n-boot` | `5000` | Amostras bootstrap por pixel |
+| `--no-use-anomaly` | — | Usa precipitação bruta em vez de anomalias |
+| `--test` | `false` | Smoke test: apenas o primeiro MoV e a primeira bacia |
 
 ```bash
-modal token current
+# Todos os MoVs, todas as bacias — novo experimento
+modal run experiments/06_predep_comparisson_brazil_granular.py --movs "all" --basins "all"
+
+# Continuar experimento existente (pula combinações já calculadas)
+modal run experiments/06_predep_comparisson_brazil_granular.py --movs "all" --basins "all" --exp-n 21
+
+# Lags selecionados para um MoV específico
+modal run experiments/06_predep_comparisson_brazil_granular.py --movs "SAM" --basins "all" --lags "0,1,3,6,9,12"
+
+# Adicionar lag 0 a experimento já existente
+modal run experiments/06_predep_comparisson_brazil_granular.py --movs "all" --basins "all" --exp-n 21 --lag-zero
 ```
 
-4. Smoke test:
+Os resultados são salvos em `results/predep_granular_brazil/expN/`.
+
+## Geração de plots (local)
+
+### PNGs por bacia e Brasil completo
 
 ```bash
-modal run tests/test_modal.py
+# Experimento mais recente — todos os MoVs
+python scripts/generate_plots_exp.py
+
+# Experimento específico, subconjunto de MoVs e lags
+python scripts/generate_plots_exp.py --exp-n 21 --movs "ONI,SAM" --lags "1,3,6,9,12"
 ```
 
-## Dados (nao versionados)
+Flags disponíveis: `--exp-n`, `--movs`, `--lags`.
+Saída em `results/predep_granular_brazil/expN/plots/{MOV}/`.
 
-Os dados nao sao versionados no Git por tamanho/privacidade. Coloque tudo localmente antes de executar.
-
-### Pipeline base (entrada generica)
-
-- `data/input/merged_indices.csv`
-- `data/input/seasonal_precipitation_anomalies_1982_2020.nc`
-
-### Modal: Brasil (experimentos 02 e 03)
-
-Arquivos locais esperados:
-
-- `data/processed/xavier_monthly/pr_monthly_1961_2019_BRAZIL_combined.nc`
-- `data/raw/mov_indices/TNA_indice data.csv`
-- `data/raw/mov_indices/*_indice*.csv` (outros MoVs)
-
-Se o arquivo mensal nao existir, os scripts tentam gerar a partir dos diarios:
-
-- `data/raw/xavier_daily/pr_19610101_19801231_BR-DWGD_UFES_UTEXAS_v_3.2.2-002.nc`
-- `data/raw/xavier_daily/pr_19810101_20001231_BR-DWGD_UFES_UTEXAS_v_3.2.2-003.nc`
-- `data/raw/xavier_daily/pr_20010101_20191231_BR-DWGD_UFES_UTEXAS_v_3.2.2-001.nc`
-- `data/raw/xavier_daily/pr_20010101_20191231_BR-DWGD_UFES_UTEXAS_v_3.2.2-004.nc`
-
-### Modal: Uruguai por clusters (experimento 04)
-
-- `data/processed/xavier_monthly/pr_monthly_1961_2019_BRAZIL_combined.nc`
-- `data/raw/mov_indices/*_indice*.csv`
-- `data/clusters/uruguai/URUGUAI_recortado.shp`
-- `data/processed/uruguai_cluster_masks.npz` (gerado localmente)
-
-### Modal: Brasil granular por bacia (experimento 06)
-
-- `data/processed/xavier_monthly/pr_monthly_1961_2019_BRAZIL_combined.nc`
-- `data/raw/mov_indices/*_indice*.csv`
-- `data/clusters/<bacia>/*.shp` (amazonica, atlantico_leste, atlantico_nordeste, atlantico_sudeste, atlantico_sul, paraguai, paranaiba, sao_francisco, tocantins, uruguai)
-
-### Geracao de mensal RS (opcional)
-
-Para produzir o arquivo mensal do RS:
+### PDFs por bacia
 
 ```bash
-python tools/convert_xavier_daily_to_monthly.py
+python scripts/generate_plots_exp.py --exp-n 21 --pdf-basin parana
 ```
 
-Gera: `data/processed/xavier_monthly/pr_monthly_1961_2019_RS_combined.nc`
+Gera três PDFs em `results/predep_granular_brazil/expN/plots/PDF/`:
+- `{bacia}_PREDEP.pdf` — α ótimo + α por lag (um MoV por página)
+- `{bacia}_REGRESSAO.pdf` — r² ótimo + r² por lag
+- `{bacia}_COMPARACAO.pdf` — diferença PREDEP−r² + mapa vencedor
 
-## Execucao dos experimentos no Modal
+### Comparação multi-MoV
 
-Todos os comandos abaixo exigem token valido.
+O notebook `notebooks/best_mov_comparison.ipynb` mostra, por pixel, qual MoV
+teve o maior PREDEP (α) e r² para cada estação e lag.
+
+Configure a célula de configuração e execute todas as células:
+
+```python
+EXP_N = 21
+LAGS  = [0, 1, 3, 6, 9, 12]   # None = todos
+SAVE  = True
+```
+
+Saída em `results/predep_granular_brazil/expN/plots/best_mov/`:
+`best_mov_Geral.png`, `best_mov_Lag_N.png`, `best_mov_expN.pdf`.
+
+Para exploração interativa por MoV individual, use `notebooks/plot_predep_granular_results.ipynb`.
+
+## Estrutura do repositório
+
+| Diretório | Conteúdo |
+|---|---|
+| `experiments/` | Entrypoints Modal |
+| `src/` | PREDEP, regressão, processamento e visualização |
+| `scripts/` | Geração de plots e automação |
+| `notebooks/` | Exploração local e visualização interativa |
+| `data/` | Dados de entrada (não versionados) |
+| `results/` | Saídas dos experimentos (não versionados) |
+| `tests/` | Testes unitários e Modal |
+| `docs/` | Metodologia |
+
+## Troubleshooting
 
 ```bash
-modal run experiments/02_predep_xavier_brazil_analysis.py
-modal run experiments/03_regression_xavier_brazil_analysis.py
-modal run experiments/04_predep_uruguai_clusters.py --test
-modal run experiments/04_predep_uruguai_clusters.py
-modal run experiments/06_predep_comparisson_brazil_granular.py --movs "ONI" --basins "uruguai"
+modal token current                                  # verificar autenticação
+python -c "import modal; print(modal.__version__)"   # verificar instalação
+modal volume ls                                      # listar volumes
+modal volume get xavier-data results/ ./results/     # baixar resultados
 ```
-
-## Volumes e paths no Modal
-
-Os experimentos usam o volume `xavier-data`. Principais paths remotos:
-
-- `/data/input/pr_monthly_1961_2019_BRAZIL_combined.nc`
-- `/data/input/<MOV>_indice_data.csv`
-- `/data/input/uruguai_cluster_masks.npz`
-- `/data/input/basin_masks/<bacia>.npz`
-
-Comandos uteis:
-
-```bash
-modal volume ls
-modal volume create xavier-data
-modal volume put xavier-data <arquivo_local> /input/<nome_remoto>
-modal volume get xavier-data results/ ./local_results/
-```
-
-## Saidas (locais apos download)
-
-- `results/xavier_brazil/`
-- `results/regression/`
-- `results/predep_uruguai/expN/`
-- `results/predep_granular_brazil/expN/`
-
-## Estrutura do repositorio
-
-- `experiments/`: entrypoints Modal
-- `src/`: implementacao PREDEP, regressao, processamento e visualizacao
-- `scripts/`: automacao e monitoramento
-- `tools/`: utilitarios pontuais
-- `data/`: insumos e dados processados (fora do Git)
-- `results/`: saidas (fora do Git)
-- `notebooks/`: exploracao local
-- `docs/`: metodologia
-- `tests/`: testes unitarios e Modal
-
-## Troubleshooting rapido
-
-- Token: `modal token current`
-- Modal instalado: `python -c "import modal; print(modal.__version__)"`
-- Dados faltando: verifique `data/` e o README em `data/`
-- Volume vazio: refaca upload com `modal volume put` e rode novamente

@@ -55,22 +55,40 @@ DEFAULT_MOVS = ["ONI", "NIN04", "SOI"]
 
 # Bacias hidrográficas do Brasil — diretórios locais dos shapefiles
 BASINS = {
-    "amazonica":          "data/clusters/amazonica",
-    "atlantico_leste":    "data/clusters/atlantico_leste",
-    "atlantico_nordeste": "data/clusters/atlantico_nordeste",
-    "atlantico_sudeste":  "data/clusters/atlantico_sudeste",
-    "atlantico_sul":      "data/clusters/atlantico_sul",
-    "paraguai":           "data/clusters/paraguai",
-    "parnaiba":           "data/clusters/paranaiba",
-    "sao_francisco":      "data/clusters/sao_francisco",
-    "tocantins":          "data/clusters/tocantins",
-    "uruguai":            "data/clusters/uruguai",
+    "amazonica":                   "data/clusters/amazonica",
+    "atlantico_leste":             "data/clusters/atlantico_leste",
+    "atlantico_nordeste":          "data/clusters/atlantico_nordeste",
+    "atlantico_nordeste_oriental": "data/clusters/atlantico_nordeste_oriental",
+    "atlantico_sudeste":           "data/clusters/atlantico_sudeste",
+    "atlantico_sul":               "data/clusters/atlantico_sul",
+    "paraguai":                    "data/clusters/paraguai",
+    "parana":                      "data/clusters/parana",
+    "parnaiba":                    "data/clusters/paranaiba",
+    "sao_francisco":               "data/clusters/sao_francisco",
+    "tocantins":                   "data/clusters/tocantins",
+    "uruguai":                     "data/clusters/uruguai",
 }
 
 # Compartilhado via fork com os workers de multiprocessing
 _PRECIP_ARR_GLOBAL = None  # (n_obs, n_lat, n_lon)
 
 
+
+
+def _parse_lags_csv(lags_csv: str) -> list:
+    """Converte string de lags para lista ordenada de inteiros.
+
+    Exemplos: "0" → [0]; "1-12" → [1..12]; "0,1,3,6" → [0,1,3,6].
+    """
+    lags = []
+    for part in lags_csv.split(","):
+        part = part.strip()
+        if "-" in part and not part.startswith("-"):
+            a, b = part.split("-", 1)
+            lags.extend(range(int(a), int(b) + 1))
+        else:
+            lags.append(int(part))
+    return sorted(set(lags))
 
 
 def _precompute_mov_alignment(mov_lookup, s_years, s_months, lag):
@@ -191,6 +209,7 @@ def process_mov(
     debug: bool = False,
     basin_name: str = "brazil",
     use_anomaly: bool = True,
+    lags_csv: str = "1-12",
 ):
     """
     Container Modal: PREDEP granular ponto-a-ponto por bacia.
@@ -276,12 +295,14 @@ def process_mov(
           f"{int(mov_monthly['value'].notna().sum())} meses válidos")
 
     # ── 3. Por estação: precipitação por ponto + PREDEP (paralelo por lag) ──────
+    lags = _parse_lags_csv(lags_csv)
+    n_lags = len(lags)
     n_seasons = len(SEASONS)
-    ac_arr = np.full((n_seasons, N_LAGS, n_lat, n_lon), np.nan)
-    r2_arr = np.full((n_seasons, N_LAGS, n_lat, n_lon), np.nan)
+    ac_arr = np.full((n_seasons, n_lags, n_lat, n_lon), np.nan)
+    r2_arr = np.full((n_seasons, n_lags, n_lat, n_lon), np.nan)
 
     mov_bar = None if debug else tqdm(
-        total=N_LAGS * n_seasons,
+        total=n_lags * n_seasons,
         desc=mov_name,
         unit="lag",
         ncols=100,
@@ -315,27 +336,28 @@ def process_mov(
                 debug,
                 basin_mask_flat,
             )
-            for lag in range(1, N_LAGS + 1)
+            for lag in lags
         ]
 
         if debug:
             print(f"  [{season}] PREDEP × {n_lat * n_lon} pts "
-                  f"× {N_LAGS} lags  (workers=8)...")
+                  f"× {n_lags} lags  (workers=8)...")
         t_pool = time.time()
+        lag_to_idx = {lag: i for i, lag in enumerate(lags)}
         with mp.Pool(processes=8) as pool:
             for lag, ac_map, r2_map in pool.imap_unordered(
                 _compute_lag_worker, lag_args
             ):
-                ac_arr[s_idx, lag - 1] = ac_map
-                r2_arr[s_idx, lag - 1] = r2_map
+                ac_arr[s_idx, lag_to_idx[lag]] = ac_map
+                r2_arr[s_idx, lag_to_idx[lag]] = r2_map
                 if mov_bar is not None:
                     mov_bar.update(1)
 
         if debug:
             print(f"  [{season}] Pool finalizado em {time.time() - t_pool:.1f}s")
-            for li in range(N_LAGS):
+            for li, lag in enumerate(lags):
                 v = int(np.sum(~np.isnan(ac_arr[s_idx, li])))
-                print(f"    Lag {li + 1:2d}: {v}/{n_lat * n_lon} pts válidos")
+                print(f"    Lag {lag:2d}: {v}/{n_lat * n_lon} pts válidos")
 
     if mov_bar is not None:
         mov_bar.close()
@@ -352,7 +374,7 @@ def process_mov(
         },
         coords={
             "season":    SEASONS,
-            "lag":       list(range(1, N_LAGS + 1)),
+            "lag":       lags,
             "latitude":  lats,
             "longitude": lons,
         },
@@ -370,7 +392,10 @@ def process_mov(
 
     out_dir = Path(f"/data/results/predep_granular_brazil/exp{exp_n}/{mov_name}")
     out_dir.mkdir(parents=True, exist_ok=True)
-    nc_file = out_dir / f"{mov_name}_{basin_name}_predep_granular_seasonal.nc"
+    if lags == [0]:
+        nc_file = out_dir / f"{mov_name}_{basin_name}_lag0_seasonal.nc"
+    else:
+        nc_file = out_dir / f"{mov_name}_{basin_name}_predep_granular_seasonal.nc"
     ds_out.to_netcdf(nc_file)
     volume.commit()
 
@@ -400,13 +425,14 @@ def discover_mov_indices(mov_names=None):
 
     mov_dir = Path("data/raw/mov_indices")
     all_indices = {}
-    for f in sorted(mov_dir.glob("*_indice*.csv")):
-        match = re.match(r"^(.+?)_indice", f.name)
-        if match:
-            all_indices[match.group(1)] = f
+    for pattern in ("*_indice*.csv", "*_indice*.txt"):
+        for f in sorted(mov_dir.glob(pattern)):
+            match = re.match(r"^(.+?)_indice", f.name)
+            if match and match.group(1) not in all_indices:
+                all_indices[match.group(1)] = f
 
     if mov_names is None:
-        mov_names = DEFAULT_MOVS
+        return [(name, path) for name, path in all_indices.items()]
 
     result = []
     for name in mov_names:
@@ -442,12 +468,39 @@ def upload_mov_index(mov_name: str, local_path):
     from pathlib import Path
 
     local_path = Path(local_path)
-    df = pd.read_csv(local_path)
-    df.columns = [c.strip() for c in df.columns]
-    mov_csv = df[[df.columns[0], df.columns[1]]].copy()
-    mov_csv.columns = ["time", "value"]
-    mov_csv["time"] = pd.to_datetime(mov_csv["time"])
-    mov_csv = mov_csv.dropna(subset=["value"])
+
+    if local_path.suffix == ".txt":
+        # Formato fixed-width com cabeçalho textual (ex: ATL3_indice_data.txt)
+        # Colunas: Year  Month  <índice1>  <índice2> ...
+        lines = local_path.read_text().splitlines()
+        header_idx = next(
+            i for i, line in enumerate(lines)
+            if "Year" in line and "Month" in line
+        )
+        df_raw = pd.read_csv(
+            local_path, sep=r"\s+", skiprows=header_idx, engine="python"
+        )
+        df_raw["time"] = pd.to_datetime(
+            {"year": df_raw["Year"], "month": df_raw["Month"], "day": 1}
+        )
+        if mov_name not in df_raw.columns:
+            raise ValueError(
+                f"Coluna '{mov_name}' não encontrada em {local_path.name}. "
+                f"Disponíveis: {df_raw.columns.tolist()}"
+            )
+        mov_csv = (
+            df_raw[["time", mov_name]]
+            .rename(columns={mov_name: "value"})
+            .dropna(subset=["value"])
+        )
+    else:
+        # Formato CSV padrão de duas colunas: time, value
+        df = pd.read_csv(local_path)
+        df.columns = [c.strip() for c in df.columns]
+        mov_csv = df[[df.columns[0], df.columns[1]]].copy()
+        mov_csv.columns = ["time", "value"]
+        mov_csv["time"] = pd.to_datetime(mov_csv["time"])
+        mov_csv = mov_csv.dropna(subset=["value"])
 
     with tempfile.NamedTemporaryFile(suffix=".csv", delete=False, mode="w") as f:
         mov_csv.to_csv(f, index=False)
@@ -604,6 +657,43 @@ def merge_basin_results(mov_name: str, basin_names: list, exp_n: int):
     return out_file
 
 
+def patch_lag0_into_results(mov_name: str, basin_name: str, exp_n: int):
+    """Insere o lag 0 no NC principal da bacia, se ainda não estiver presente."""
+    import xarray as xr
+    from pathlib import Path
+
+    mov_dir = Path(f"results/predep_granular_brazil/exp{exp_n}/{mov_name}")
+    lag0_nc = mov_dir / f"{mov_name}_{basin_name}_lag0_seasonal.nc"
+    main_nc = mov_dir / f"{mov_name}_{basin_name}_predep_granular_seasonal.nc"
+
+    if not lag0_nc.exists():
+        print(f"  [AVISO] lag0 não encontrado: {lag0_nc.name}")
+        return
+    if not main_nc.exists():
+        print(f"  [AVISO] NC principal não encontrado: {main_nc.name}")
+        return
+
+    ds_main = xr.open_dataset(main_nc)
+    if 0 in ds_main.lag.values:
+        print(f"  {mov_name}/{basin_name}: lag 0 já presente, pulando")
+        ds_main.close()
+        return
+
+    ds_lag0 = xr.open_dataset(lag0_nc)
+    ds_merged = xr.concat([ds_lag0, ds_main], dim="lag").sortby("lag")
+    ds_merged.attrs = ds_main.attrs
+    ds_lag0.close()
+    ds_main.close()
+
+    tmp = main_nc.with_suffix(".tmp.nc")
+    ds_merged.to_netcdf(tmp)
+    ds_merged.close()
+    tmp.rename(main_nc)
+    lag0_nc.unlink()
+
+    print(f"  {mov_name}/{basin_name}: lag 0 inserido → {main_nc.name}")
+
+
 def get_next_exp_n(base_dir: str) -> int:
     import re
     from pathlib import Path
@@ -629,6 +719,9 @@ def main(
     debug: bool = False,
     test: bool = False,
     use_anomaly: bool = True,
+    exp_n: int = 0,
+    lag_zero: bool = False,
+    lags: str = "1-12",
 ):
     """
     PREDEP granular ponto-a-ponto no Brasil, por bacia.
@@ -638,6 +731,7 @@ def main(
       --basins  "all"           "all" ou nomes separados por vírgula
                                 ex: "uruguai,paraguai,sao_francisco"
       --n-boot  1000            Bootstrap por pixel (padrão: 1000)
+      --lags    "1-12"          Lags a calcular. Ex: "0,1,3,6,9,12" ou "1-12"
       --debug                   Prints detalhados por lag
       --test                    Apenas a primeira bacia do primeiro MoV
 
@@ -645,6 +739,7 @@ def main(
       modal run experiments/06_predep_comparisson_brazil_granular.py --movs "ONI" --basins "uruguai"
       modal run experiments/06_predep_comparisson_brazil_granular.py --movs "ONI" --basins "all"
       modal run experiments/06_predep_comparisson_brazil_granular.py --movs "ONI,NIN04" --basins "all"
+      modal run experiments/06_predep_comparisson_brazil_granular.py --movs "SAM" --basins "all" --lags "0,1,3,6,9,12"
     """
     from datetime import datetime
     from pathlib import Path
@@ -654,7 +749,10 @@ def main(
     sys.path.insert(0, str(Path(__file__).parent.parent))
     from src.visualization.cluster_plots import generate_plots_granular
 
-    mov_names  = [m.strip() for m in movs.split(",")]
+    mov_names = (
+        None if movs.strip().lower() == "all"
+        else [m.strip() for m in movs.split(",")]
+    )
     mov_list   = discover_mov_indices(mov_names)
     basin_list = (
         list(BASINS.keys()) if basins.strip().lower() == "all"
@@ -665,7 +763,8 @@ def main(
         mov_list   = mov_list[:1]
         basin_list = basin_list[:1]
 
-    exp_n   = get_next_exp_n("results/predep_granular_brazil")
+    if exp_n <= 0:
+        exp_n = get_next_exp_n("results/predep_granular_brazil")
     exp_dir = Path(f"results/predep_granular_brazil/exp{exp_n}")
 
     print("=" * 80)
@@ -674,7 +773,7 @@ def main(
     print(f"Experimento: exp{exp_n}  |  Saída: {exp_dir}/")
     print(f"MoVs:   {[m for m, _ in mov_list]}")
     print(f"Bacias: {basin_list}")
-    print(f"Estações: {', '.join(SEASONS)}  |  Lags: 1-{N_LAGS}  |  n_boot={n_boot}")
+    print(f"Estações: {', '.join(SEASONS)}  |  Lags: {lags}  |  n_boot={n_boot}")
     print("=" * 80)
 
     upload_xavier_data()
@@ -702,14 +801,39 @@ def main(
         for b_idx, bname in enumerate(basin_list, 1):
             if bname not in BASINS:
                 continue
+            basin_nc = exp_dir / mov_name / f"{mov_name}_{bname}_predep_granular_seasonal.nc"
+
+            if lag_zero:
+                import xarray as xr
+                has_lag0 = (
+                    basin_nc.exists()
+                    and 0 in xr.open_dataset(basin_nc).lag.values
+                )
+                if has_lag0:
+                    print(f"  [{b_idx}/{len(basin_list)}] bacia: {bname} — lag 0 já existe, pulando")
+                    continue
+                print(f"  [{b_idx}/{len(basin_list)}] bacia: {bname} — calculando lag 0")
+                result = process_mov.remote(
+                    mov_name, n_boot, exp_n, debug, bname, use_anomaly, "0"
+                )
+                download_results(mov_name, exp_n)
+                patch_lag0_into_results(mov_name, bname, exp_n)
+                all_results.append(result)
+                continue
+
+            if basin_nc.exists():
+                print(f"  [{b_idx}/{len(basin_list)}] bacia: {bname} — já existe, pulando")
+                continue
             print(f"  [{b_idx}/{len(basin_list)}] bacia: {bname}")
-            result = process_mov.remote(mov_name, n_boot, exp_n, debug, bname, use_anomaly)
+            result = process_mov.remote(
+                mov_name, n_boot, exp_n, debug, bname, use_anomaly, lags
+            )
             download_results(mov_name, exp_n)
             all_results.append(result)
 
             basin_nc = exp_dir / mov_name / f"{mov_name}_{bname}_predep_granular_seasonal.nc"
             if basin_nc.exists():
-                base_plots = exp_dir / "plots" / mov_name
+                base_plots = Path("plots") / f"exp{exp_n}" / mov_name
                 print(f"  Gerando plots para bacia {bname}...")
                 generate_plots_granular(basin_nc, mov_name, base_plots, basin_name=bname)
 

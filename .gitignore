@@ -53,6 +53,12 @@ data/processed/
 # Results
 results/
 
+# Plots gerados localmente (não versionados)
+plots/
+
+# Backups / scratch local
+backup/
+
 # Logs
 logs/*.log
 !logs/.gitkeep
