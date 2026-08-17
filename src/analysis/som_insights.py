@@ -19,6 +19,7 @@ abaixo (não está instalada via pip).
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Dict
 
 import numpy as np
 
@@ -56,6 +57,8 @@ class FeatureBundle:
     pixel_rc: np.ndarray     # (n_pixels, 2) (row, col) no grid (n_lat, n_lon)
     scaler_mean: np.ndarray  # (n_features,) ou None
     scaler_std: np.ndarray   # (n_features,) ou None
+    variable: str = "alpha_core"  # variável do NC usada como feature (alpha_core|r2)
+    pixel_basin: np.ndarray = None  # (n_pixels,) nome da bacia, se disponível (fonte parquet)
 
 
 @dataclass
@@ -78,12 +81,17 @@ def build_feature_matrix(
     fill_value: float = DEFAULT_FILL,
     season_filter: str = None,
     strict: bool = False,
+    variable: str = "alpha_core",
 ) -> FeatureBundle:
     """
     Lê os NCs Brazil-wide de cada MoV em exp_dir e monta a matriz de features.
 
-    Cada amostra é um pixel do Brasil; cada feature é α (alpha_core) de um
-    (MoV, lag, estação). A ordem das features é (MoV, lag, estação).
+    Cada amostra é um pixel do Brasil; cada feature é o valor de `variable`
+    ("alpha_core" ou "r2") de um (MoV, lag, estação). A ordem das features é
+    (MoV, lag, estação). Usar variable="r2" produz um bundle diretamente
+    comparável ao de alpha_core (mesmo footprint/pixels, mesma ordem de
+    features), permitindo treinar um SOM equivalente sobre r² para
+    comparação lado a lado com o SOM de PREDEP.
     """
     import xarray as xr
 
@@ -106,7 +114,7 @@ def build_feature_matrix(
 
     # Grids iguais entre MoVs; outer-join garante alinhamento.
     aligned = xr.align(*datasets, join="outer", fill_value=np.nan)
-    ac = np.stack([ds["alpha_core"].values for ds in aligned])  # (mov, season, lag, lat, lon)
+    ac = np.stack([ds[variable].values for ds in aligned])  # (mov, season, lag, lat, lon)
 
     ds0 = aligned[0]
     nc_seasons = [_to_str(s) for s in ds0.season.values]
@@ -194,7 +202,164 @@ def build_feature_matrix(
         X=X, X_raw=X_raw, feature_names=feature_names, feature_index=feature_index,
         mov_names=mov_names, lags=used_lags, seasons=seasons,
         lats=lats, lons=lons, valid_mask=valid_mask, pixel_rc=pixel_rc,
-        scaler_mean=scaler_mean, scaler_std=scaler_std,
+        scaler_mean=scaler_mean, scaler_std=scaler_std, variable=variable,
+    )
+
+
+def build_feature_matrix_from_parquet(
+    exp_dir,
+    mov_filter=None,
+    lags=None,
+    standardize: bool = True,
+    fill_value: float = DEFAULT_FILL,
+    season_filter: str = None,
+    variable: str = "alpha",
+    standardize_method: str = "quantile",
+    basin_correct: bool = False,
+) -> FeatureBundle:
+    """
+    Variante de build_feature_matrix para a fonte em parquet do experimento
+    Brasil-todo (results/predep_granular_brazil/exp_brasil no repo
+    predep_visualization): 1 arquivo por MoV × estação, colunas
+    [basin, latitude, longitude, lag, r2, alpha]. Cobre a extensão completa
+    do país (o cálculo pixel-a-pixel de PREDEP/R² já está pronto; aqui só
+    remontamos a matriz de features).
+
+    variable: "alpha" (PREDEP) ou "r2". Note que o nome da coluna aqui é
+    "alpha", diferente de "alpha_core" usado por build_feature_matrix (NC).
+
+    standardize_method: "zscore" (padrão) ou "quantile"/"rank". α e r² têm
+    distribuição fortemente assimétrica (mediana baixa, cauda longa até 1);
+    z-score comprime a maioria dos pixels perto da média e deixa a variância
+    dominada pelos poucos valores extremos, o que tende a produzir um
+    regime "fundo" dominando o mapa no SOM. "quantile" aplica uma
+    transformação rank-based por feature (QuantileTransformer,
+    output_distribution="normal" — "RankGauss"), preservando a ordem mas
+    removendo a assimetria/cauda, o que tende a distribuir os regimes de
+    forma mais equilibrada espacialmente.
+
+    basin_correct: se True, aplica uma correção de "efeito de lote" por
+    bacia ANTES da padronização global — cada bacia é centrada na própria
+    média (X - média_da_bacia + média_global), feature a feature, sobre
+    X_raw. Isso remove um viés sistemático de nível de bacia que vem do
+    cálculo de α/r² ter sido feito com um ajuste (regressão + bootstrap)
+    independente por bacia, sem apagar a variação real dentro de cada
+    bacia. Diagnóstico: sem isso, bacias pequenas e climaticamente
+    "isoladas" no cálculo (ex.: Uruguai) podem colapsar inteiras num único
+    regime do SOM mesmo sem nenhuma diversidade real — um sintoma de
+    divisão administrativa vazando pro resultado, não de sinal climático.
+    """
+    import pandas as pd
+
+    exp_dir = Path(exp_dir)
+    mov_dirs = sorted(
+        d for d in exp_dir.iterdir()
+        if d.is_dir() and (mov_filter is None or d.name in mov_filter)
+    )
+    if not mov_dirs:
+        raise FileNotFoundError(f"Nenhum MoV encontrado em {exp_dir}")
+    mov_names = [d.name for d in mov_dirs]
+    seasons = [s for s in SEASONS if season_filter is None or s == season_filter]
+
+    frames = {}
+    lats = lons = lag_set = None
+    for mov_dir, mov in zip(mov_dirs, mov_names):
+        for season in seasons:
+            f = mov_dir / f"{season}.parquet"
+            if not f.exists():
+                continue
+            df = pd.read_parquet(
+                f, columns=["basin", "latitude", "longitude", "lag", variable]
+            )
+            frames[(mov, season)] = df
+            if lats is None:
+                lats = np.sort(df["latitude"].unique())
+                lons = np.sort(df["longitude"].unique())
+                lag_set = sorted(df["lag"].unique())
+
+    if not frames:
+        raise FileNotFoundError(f"Nenhum parquet encontrado em {exp_dir}")
+
+    lat_idx = {v: i for i, v in enumerate(lats)}
+    lon_idx = {v: i for i, v in enumerate(lons)}
+    used_lags = [l for l in lag_set if lags is None or l in lags]
+    n_lat, n_lon = len(lats), len(lons)
+    n_mov, n_season, n_lag = len(mov_names), len(seasons), len(used_lags)
+
+    ac = np.full((n_mov, n_season, n_lag, n_lat, n_lon), np.nan)
+    basin_grid = np.full((n_lat, n_lon), "desconhecida", dtype=object)
+
+    for mi, mov in enumerate(mov_names):
+        for sj, season in enumerate(seasons):
+            df = frames.get((mov, season))
+            if df is None:
+                continue
+            ri_all = df["latitude"].map(lat_idx).to_numpy()
+            ci_all = df["longitude"].map(lon_idx).to_numpy()
+            lag_all = df["lag"].to_numpy()
+            val_all = df[variable].to_numpy()
+            for li, lag in enumerate(used_lags):
+                sel = lag_all == lag
+                ac[mi, sj, li, ri_all[sel], ci_all[sel]] = val_all[sel]
+            if mi == 0 and sj == 0:
+                basin_grid[ri_all, ci_all] = df["basin"].to_numpy()
+
+    finite = ~np.isnan(ac)
+    footprint = np.any(finite, axis=(0, 1, 2))
+    complete = np.all(finite, axis=(0, 1, 2))
+    print(f"  Cobertura (parquet): footprint={int(footprint.sum())} px | "
+          f"completos={int(complete.sum())} px")
+
+    valid_mask = footprint
+    pixel_rc = np.argwhere(valid_mask)
+
+    cols, feature_names, feature_index = [], [], []
+    for mi in range(n_mov):
+        for li in range(n_lag):
+            for sj in range(n_season):
+                slab = ac[mi, sj, li]
+                cols.append(slab[valid_mask])
+                feature_names.append(
+                    f"{mov_names[mi]}|lag{used_lags[li]}|{seasons[sj]}"
+                )
+                feature_index.append((mi, li, sj))
+
+    X_raw = np.column_stack(cols).astype(np.float64)
+    X_raw = np.nan_to_num(X_raw, nan=fill_value)
+    feature_index = np.array(feature_index, dtype=int)
+    pixel_basin = basin_grid[valid_mask]
+
+    if basin_correct:
+        global_mean = X_raw.mean(axis=0)
+        for b in np.unique(pixel_basin):
+            mask = pixel_basin == b
+            X_raw[mask] = X_raw[mask] - X_raw[mask].mean(axis=0) + global_mean
+
+    if standardize and standardize_method in ("quantile", "rank"):
+        from sklearn.preprocessing import QuantileTransformer
+        n_quant = max(10, min(1000, X_raw.shape[0]))
+        qt = QuantileTransformer(
+            output_distribution="normal", n_quantiles=n_quant,
+            subsample=min(200_000, X_raw.shape[0]), random_state=42,
+        )
+        X = qt.fit_transform(X_raw)
+        scaler_mean, scaler_std = None, None
+    elif standardize:
+        mean = X_raw.mean(axis=0)
+        std = X_raw.std(axis=0)
+        std_safe = np.where(std == 0, 1.0, std)
+        X = (X_raw - mean) / std_safe
+        scaler_mean, scaler_std = mean, std_safe
+    else:
+        X = X_raw.copy()
+        scaler_mean = scaler_std = None
+
+    return FeatureBundle(
+        X=X, X_raw=X_raw, feature_names=feature_names, feature_index=feature_index,
+        mov_names=mov_names, lags=used_lags, seasons=seasons,
+        lats=lats, lons=lons, valid_mask=valid_mask, pixel_rc=pixel_rc,
+        scaler_mean=scaler_mean, scaler_std=scaler_std, variable=variable,
+        pixel_basin=pixel_basin,
     )
 
 
@@ -205,23 +370,52 @@ def train_som(
     learning_rate: float = 0.5,
     num_iteration: int = 10000,
     seed: int = 42,
-    optimize: bool = False
+    optimize: bool = False,
+    use_epochs: bool = False,
+    search_radius: int = 3,
+    search_sample_size: int = None,
+    search_epochs: int = None,
+    progress_cb=None,
 ):
-    """Treina um SOM sobre X. Retorna (som, metrics)."""
+    """Treina um SOM sobre X. Retorna (som, metrics).
+
+    use_epochs=False preserva o comportamento histórico (num_iteration =
+    nº total de atualizações de peso, não por amostra — MiniSom's
+    train()/train_random() sem use_epochs). Para datasets grandes isso
+    sub-treina (ex.: num_iteration=2000 em 70k amostras ≈ 2,8% dos dados
+    vistos). use_epochs=True faz num_iteration ser de fato o nº de épocas
+    completas (len(X) atualizações cada).
+
+    search_sample_size/search_epochs: ver optimize_som_topology — quando
+    optimize=True, permitem que a varredura de topologias (cara: 1 SOM
+    por candidata) rode numa subamostra/com poucas épocas, enquanto o
+    modelo final (retornado) é sempre retreinado do zero na base COMPLETA
+    com num_iteration épocas. Isso é o principal alavancador de custo
+    para datasets grandes (~70k pixels): sem isso, a varredura de ~30-50
+    candidatas × épocas completas pode facilmente ultrapassar horas.
+    """
     n, input_len = X.shape
-    
+
     if optimize:
         print("    [+] Otimizando topologia via Fronteira de Pareto (QE vs TE)...")
         som, metrics_dict, pareto_results = optimize_som_topology(
-            X, learning_rate=learning_rate, num_iteration=num_iteration, random_seed=seed
+            X, learning_rate=learning_rate, num_iteration=num_iteration,
+            random_seed=seed, use_epochs=use_epochs, search_radius=search_radius,
+            search_sample_size=search_sample_size, search_epochs=search_epochs,
+            progress_cb=progress_cb,
         )
         metrics = {
             "som_size": f"{metrics_dict['rows']}x{metrics_dict['cols']}",
             "n_samples": n,
             "n_features": input_len,
-            "quantization_error": metrics_dict['QE'],
-            "topographic_error": metrics_dict['TE'],
-            "pareto_results": pareto_results
+            "quantization_error": float(metrics_dict['QE']),
+            "topographic_error": float(metrics_dict['TE']),
+            "search_quantization_error": float(metrics_dict.get('search_QE', metrics_dict['QE'])),
+            "search_topographic_error": float(metrics_dict.get('search_TE', metrics_dict['TE'])),
+            "pareto_results": [
+                {**r, "QE": float(r["QE"]), "TE": float(r["TE"])}
+                for r in pareto_results
+            ],
         }
         return som, metrics
 
@@ -240,7 +434,10 @@ def train_som(
         activation_distance="euclidean", random_seed=seed,
     )
     som.pca_weights_init(X)
-    som.train_random(X, num_iteration, verbose=False)
+    if use_epochs:
+        som.train(X, num_iteration, random_order=True, use_epochs=True)
+    else:
+        som.train_random(X, num_iteration, verbose=False)
 
     metrics = {
         "som_size": g,
@@ -252,22 +449,47 @@ def train_som(
     return som, metrics
 
 
-def assign_regimes(som: MiniSom, X: np.ndarray, n_regimes: int = 7, seed: int = 42, auto_k: bool = False):
-    """Agrupa os neurônios em regimes e rotula cada pixel pelo seu BMU."""
+def assign_regimes(som: MiniSom, X: np.ndarray, n_regimes: int = 7, seed: int = 42,
+                   auto_k: bool = False, k_selection: str = "silhouette",
+                   k_margin_sigma: float = 1.0, max_k: int = 15):
+    """Agrupa os neurônios em regimes e rotula cada pixel pelo seu BMU.
+
+    k_selection: 'silhouette' (padrão, mais estável entre sementes) ou
+    'elbow' (WSS/inertia, mais sensível à semente para poucos pontos como
+    os neurônios do SOM). Só tem efeito quando auto_k=True.
+    k_margin_sigma: exige que o K vencedor da silhouette bata o runner-up
+    por pelo menos essa margem (em desvios combinados entre sementes);
+    caso contrário, entre os K empatados escolhe o maior (mais granular)
+    em vez do argmax cru. Ver select_k_with_margin em som_macro_clustering.py.
+    max_k: teto da busca de K (só com auto_k=True). Recomendado = nº de
+    MoVs usados no SOM (len(bundle.mov_names)) — mais que isso não faz
+    muito sentido semântico (cada MoV pode no máximo "dominar" seu próprio
+    regime) e evita que a regra de desempate (escolhe o maior K empatado)
+    trave no teto artificial em vez do K real. Se o K escolhido bater
+    exatamente em max_k, é sinal de que o teto pode estar truncando a
+    busca — vale checar com um teto maior.
+    """
     W = som.get_weights()                 # (gx, gy, input_len)
     gx, gy, input_len = W.shape
     W_flat = W.reshape(-1, input_len)
-    
+
     kmeans_results = None
     hierarchical_model = None
 
     if auto_k:
-        print("    [+] Buscando o 'Cotovelo' ideal para o número de macro-clusters (K-Means)...")
-        kmeans_results = perform_macro_clustering(som, method='kmeans', k=None, max_k=15, random_seed=seed)
+        print(f"    [+] Buscando K ideal para os regimes (critério: {k_selection}, max_k={max_k})...")
+        kmeans_results = perform_macro_clustering(
+            som, method='kmeans', k=None, max_k=max_k, random_seed=seed,
+            k_selection=k_selection, k_margin_sigma=k_margin_sigma,
+        )
         km = kmeans_results['model']
-        n_regimes = kmeans_results['elbow_k']
-        print(f"    [+] Cotovelo encontrado: K = {n_regimes}")
-        
+        n_regimes = kmeans_results['k']
+        print(f"    [+] K escolhido: {n_regimes}  "
+              f"(cotovelo={kmeans_results['elbow_k']}, "
+              f"silhouette={kmeans_results['silhouette_k']}, "
+              f"raw={kmeans_results['silhouette_k_raw']})")
+        print(f"    [+] {kmeans_results['k_margin_note']}")
+
         # Gera modelo hierarquico apenas para ter o Dendrograma
         hierarchical_model = perform_macro_clustering(som, method='hierarchical', k=n_regimes)['model']
     else:
@@ -301,6 +523,70 @@ def regime_to_grid(regime_result: RegimeResult, bundle: FeatureBundle) -> np.nda
     return grid
 
 
+def local_mov_importance(
+    bundle: FeatureBundle, som: MiniSom, regimes: RegimeResult, top_k: int = 3,
+) -> Dict[str, np.ndarray]:
+    """
+    Explicabilidade LOCAL por pixel: decompõe a distância euclidiana
+    pixel→BMU (a mesma soma que já vira "atipicidade") por MoV, em vez de
+    agregada. Não retreina nada — só reaproveita X, os pesos do SOM e o
+    BMU de cada pixel, já calculados.
+
+    Para cada pixel, soma (X - peso_do_BMU)² restrita às colunas de cada
+    MoV. Quanto MENOR essa soma para um MoV, mais "explicado" o pixel está
+    por aquele MoV nessa alocação específica — o padrão lag×estação dele
+    ali é quase idêntico ao protótipo do neurônio vencedor. É o
+    complemento LOCAL (por pixel) do que `regime_fingerprints` já dá no
+    nível GLOBAL (assinatura média do regime inteiro).
+
+    Retorna dict com:
+      mov_diff: (n_pixels, n_mov) soma de diffs² por MoV, ordem de mov_names
+      top_movs: (n_pixels, top_k) nomes dos MoVs mais explicativos (menor
+                diff primeiro)
+      top1_lag, top1_season: (n_pixels,) lag/estação de melhor casamento
+                dentro do MoV top1, por pixel
+    """
+    W = som.get_weights()
+    w_pix = W[regimes.bmu_rc[:, 0], regimes.bmu_rc[:, 1]]   # (n_pixels, n_features)
+    sq_diff = (bundle.X - w_pix) ** 2                        # (n_pixels, n_features)
+
+    mov_ids = bundle.feature_index[:, 0]
+    lag_ids = bundle.feature_index[:, 1]
+    season_ids = bundle.feature_index[:, 2]
+    lags_arr = np.array(bundle.lags)
+    seasons_arr = np.array(bundle.seasons)
+
+    n_pixels = bundle.X.shape[0]
+    n_mov = len(bundle.mov_names)
+    mov_diff = np.zeros((n_pixels, n_mov))
+    for m in range(n_mov):
+        cols = mov_ids == m
+        mov_diff[:, m] = sq_diff[:, cols].sum(axis=1)
+
+    order = np.argsort(mov_diff, axis=1)                     # menor diff primeiro
+    top_idx = order[:, :min(top_k, n_mov)]
+    top_movs = np.array(bundle.mov_names)[top_idx]           # (n_pixels, top_k)
+
+    top1 = top_idx[:, 0]
+    best_lag = np.empty(n_pixels, dtype=int)
+    best_season = np.empty(n_pixels, dtype=object)
+    for m in range(n_mov):
+        pix_mask = top1 == m
+        if not pix_mask.any():
+            continue
+        cols = np.nonzero(mov_ids == m)[0]
+        local_best = np.argmin(sq_diff[np.ix_(pix_mask, cols)], axis=1)
+        best_lag[pix_mask] = lags_arr[lag_ids[cols[local_best]]]
+        best_season[pix_mask] = seasons_arr[season_ids[cols[local_best]]]
+
+    return {
+        "mov_diff": mov_diff,
+        "top_movs": top_movs,
+        "top1_lag": best_lag,
+        "top1_season": best_season,
+    }
+
+
 def auto_top_movs(bundle: FeatureBundle, k: int) -> list:
     """Top-k MoVs por α médio bruto (sobre todas features e pixels)."""
     n_mov = len(bundle.mov_names)
@@ -311,6 +597,53 @@ def auto_top_movs(bundle: FeatureBundle, k: int) -> list:
         for m in range(n_mov)
     ])
     return [bundle.mov_names[i] for i in np.argsort(scores)[::-1][:min(k, n_mov)]]
+
+
+def mov_alpha_scores(bundle: FeatureBundle) -> dict:
+    """
+    Score por MoV = média (entre pixels) do α máximo por pixel (melhor
+    combinação lag×estação daquele MoV naquele pixel). Mesma agregação de
+    _collapse_best_mov (som_to_parquet.py), reaproveitada aqui para decidir
+    quais MoVs entram no SOM por um limiar de α (ver movs_above_threshold).
+    """
+    mov_ids = bundle.feature_index[:, 0]
+    scores = {}
+    for m, name in enumerate(bundle.mov_names):
+        cols = mov_ids == m
+        if not np.any(cols):
+            scores[name] = float("-inf")
+            continue
+        best_per_pixel = bundle.X_raw[:, cols].max(axis=1)
+        scores[name] = float(best_per_pixel.mean())
+    return scores
+
+
+def movs_above_threshold(exp_dir, threshold: float, lags=None, strict: bool = False,
+                         source: str = "nc"):
+    """
+    MoVs cujo score de α (mov_alpha_scores, sempre sobre PREDEP,
+    independentemente da variável do SOM a treinar) excede `threshold`.
+
+    source: "nc" (build_feature_matrix, coluna alpha_core) ou "parquet"
+    (build_feature_matrix_from_parquet, coluna alpha — experimento Brasil-todo).
+
+    Returns
+    -------
+    (mov_filter, scores) — mov_filter: list[str] de MoVs acima do limiar
+    (ordenados por score decrescente); scores: dict {mov: score} com TODOS
+    os MoVs avaliados, para inspeção/relatório.
+    """
+    if source == "parquet":
+        ref = build_feature_matrix_from_parquet(exp_dir, mov_filter=None, lags=lags,
+                                                 standardize=False, variable="alpha")
+    else:
+        ref = build_feature_matrix(exp_dir, mov_filter=None, lags=lags,
+                                   standardize=False, strict=strict,
+                                   variable="alpha_core")
+    scores = mov_alpha_scores(ref)
+    kept = sorted((m for m, s in scores.items() if s > threshold),
+                  key=lambda m: scores[m], reverse=True)
+    return kept, scores
 
 
 _SEASON_MONTHS = {

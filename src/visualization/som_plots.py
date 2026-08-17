@@ -140,7 +140,7 @@ def plot_hitmap(som, X, output_dir, exp_n):
     return out
 
 
-def plot_component_planes(som, bundle, output_dir, exp_n):
+def plot_component_planes(som, bundle, output_dir, exp_n, value_label="α"):
     """Um heatmap por MoV sobre a grade SOM (α médio) — qual regime cada MoV guia."""
     W = som.get_weights()  # (g, g, n_features)
     if bundle.scaler_mean is not None:
@@ -175,11 +175,11 @@ def plot_component_planes(som, bundle, output_dir, exp_n):
         axes[k].axis("off")
 
     fig.suptitle(
-        f"Component planes por MoV (α médio na grade SOM) — exp{exp_n:02d}",
+        f"Component planes por MoV ({value_label} médio na grade SOM) — exp{exp_n:02d}",
         fontsize=12,
     )
     if im is not None:
-        fig.colorbar(im, ax=axes.tolist(), fraction=0.025, pad=0.02, label="α")
+        fig.colorbar(im, ax=axes.tolist(), fraction=0.025, pad=0.02, label=value_label)
     out = Path(output_dir) / f"som_component_planes_exp{exp_n:02d}.png"
     fig.savefig(out, dpi=90, bbox_inches="tight")
     plt.close(fig)
@@ -187,7 +187,8 @@ def plot_component_planes(som, bundle, output_dir, exp_n):
     return out
 
 
-def plot_regime_fingerprints(fingerprints, bundle, output_dir, exp_n, top_k=8):
+def plot_regime_fingerprints(fingerprints, bundle, output_dir, exp_n, top_k=8,
+                             value_label="α"):
     """Por regime: α médio por MoV (top-k), por lag e por estação."""
     n_regimes = len(fingerprints)
     _, _, colors = _make_regime_cmap(n_regimes)
@@ -208,21 +209,21 @@ def plot_regime_fingerprints(fingerprints, bundle, output_dir, exp_n, top_k=8):
         ax.set_xticks(range(len(order)))
         ax.set_xticklabels([mov_names[i] for i in order], rotation=45,
                            ha="right", fontsize=7)
-        ax.set_ylabel(f"R{r} (n={fp['size']})\nα médio", fontsize=8)
+        ax.set_ylabel(f"R{r} (n={fp['size']})\n{value_label} médio", fontsize=8)
         if r == 0:
             ax.set_title(f"Top {top_k} MoVs", fontsize=9)
 
         ax = axes[r][1]
         ax.bar([str(lg) for lg in lags], fp["by_lag"], color=color)
         if r == 0:
-            ax.set_title("α médio por lag", fontsize=9)
+            ax.set_title(f"{value_label} médio por lag", fontsize=9)
         if r == n_regimes - 1:
             ax.set_xlabel("lag (meses)")
 
         ax = axes[r][2]
         ax.bar(seasons, fp["by_season"], color=color)
         if r == 0:
-            ax.set_title("α médio por estação", fontsize=9)
+            ax.set_title(f"{value_label} médio por estação", fontsize=9)
 
     fig.suptitle(f"Assinatura dos regimes (SOM) — exp{exp_n:02d}", fontsize=13)
     fig.tight_layout(rect=[0, 0, 1, 0.98])
@@ -233,7 +234,8 @@ def plot_regime_fingerprints(fingerprints, bundle, output_dir, exp_n, top_k=8):
     return out
 
 
-def plot_regime_mov_heatmap(fingerprints, bundle, output_dir, exp_n):
+def plot_regime_mov_heatmap(fingerprints, bundle, output_dir, exp_n,
+                            value_label="α"):
     """Anomalia de α por regime × MoV (vs média entre regimes)."""
     n_regimes = len(fingerprints)
     n_mov = len(bundle.mov_names)
@@ -253,9 +255,9 @@ def plot_regime_mov_heatmap(fingerprints, bundle, output_dir, exp_n):
         for m in range(n_mov):
             ax.text(m, r, f"{anomaly[r, m]:+.02f}", ha="center", va="center",
                     fontsize=5, color="black")
-    fig.colorbar(im, ax=ax, label="α (anomalia vs média entre regimes)",
+    fig.colorbar(im, ax=ax, label=f"{value_label} (anomalia vs média entre regimes)",
                  fraction=0.025, pad=0.02)
-    ax.set_title(f"Anomalia de α por regime × MoV — exp{exp_n:02d}")
+    ax.set_title(f"Anomalia de {value_label} por regime × MoV — exp{exp_n:02d}")
     out = Path(output_dir) / f"som_regime_mov_table_exp{exp_n:02d}.png"
     fig.savefig(out, dpi=90, bbox_inches="tight")
     plt.close(fig)
@@ -266,7 +268,7 @@ def plot_regime_mov_heatmap(fingerprints, bundle, output_dir, exp_n):
 # --- Versões geográficas (mesma projeção de plot_regime_map) ----------------
 
 def plot_geographic_component_planes(bundle, output_dir, exp_n,
-                                     basin_outlines=None):
+                                     basin_outlines=None, value_label="α"):
     """1 mapa do Brasil por MoV: α médio por pixel (sobre lag×estação)."""
     mov_ids = bundle.feature_index[:, 0]
     n_mov = len(bundle.mov_names)
@@ -298,11 +300,11 @@ def plot_geographic_component_planes(bundle, output_dir, exp_n,
         axes[k].axis("off")
 
     fig.suptitle(
-        f"Component planes geográficos — α médio por MoV — exp{exp_n:02d}",
+        f"Component planes geográficos — {value_label} médio por MoV — exp{exp_n:02d}",
         fontsize=12,
     )
     if im is not None:
-        fig.colorbar(im, ax=axes.tolist(), fraction=0.025, pad=0.02, label="α")
+        fig.colorbar(im, ax=axes.tolist(), fraction=0.025, pad=0.02, label=value_label)
     out = Path(output_dir) / f"som_geographic_component_planes_exp{exp_n:02d}.png"
     fig.savefig(out, dpi=90, bbox_inches="tight")
     plt.close(fig)
