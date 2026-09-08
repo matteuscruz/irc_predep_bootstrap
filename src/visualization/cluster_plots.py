@@ -1300,34 +1300,34 @@ def plot_best_mov_granular(ac_stack, r2_stack, mov_names, lats, lons,
     return out
 
 
-def generate_best_mov_plots(exp_dir, lags, plots_base, mov_filter=None):
+def _load_mov_stack(exp_dir, mov_filter=None,
+                     nc_suffix="_predep_granular_seasonal.nc"):
     """
-    Carrega os merged NCs de todos os MoVs de exp_dir, gera os plots de melhor
-    MoV por pixel (geral + um por lag) e salva um PDF consolidado.
-    Saída em: plots_base/best_mov/
+    Carrega e alinha os NCs merged de todos os MoVs de exp_dir.
+
+    `nc_suffix` permite apontar para NCs com nome diferente (ex.:
+    "_predep_granular_seasonal_chirps.nc" para o experimento CHIRPS).
+
+    Retorna (ac_stack, r2_stack, mov_names, lats, lons, nc_lags), com
+    ac_stack/r2_stack de shape (n_movs, n_seasons, n_lags, n_lat, n_lon) e
+    latitude em ordem ascendente. mov_names é [] se nada for encontrado.
     """
     import xarray as xr
-    from PIL import Image
 
     exp_dir = Path(exp_dir)
-    exp_n = int(exp_dir.name.replace("exp", ""))
-
     datasets, mov_names = [], []
     for mov_dir in sorted(exp_dir.iterdir()):
         if not mov_dir.is_dir():
             continue
         if mov_filter and mov_dir.name not in mov_filter:
             continue
-        nc = mov_dir / f"{mov_dir.name}_predep_granular_seasonal.nc"
+        nc = mov_dir / f"{mov_dir.name}{nc_suffix}"
         if nc.exists():
             datasets.append(xr.open_dataset(nc))
             mov_names.append(mov_dir.name)
 
     if not datasets:
-        print(f"  [AVISO] Nenhum NC merged encontrado em {exp_dir}")
-        return
-
-    print(f"  MoVs ({len(mov_names)}): {mov_names}")
+        return None, None, [], None, None, None
 
     aligned = xr.align(*datasets, join="outer", fill_value=np.nan)
     ac_stack = np.stack([ds["alpha_core"].values for ds in aligned])
@@ -1340,6 +1340,34 @@ def generate_best_mov_plots(exp_dir, lags, plots_base, mov_filter=None):
     for ds in aligned:
         ds.close()
 
+    if len(lats) > 1 and lats[0] > lats[-1]:
+        lats = lats[::-1]
+        ac_stack = ac_stack[:, :, :, ::-1, :]
+        r2_stack = r2_stack[:, :, :, ::-1, :]
+
+    return ac_stack, r2_stack, mov_names, lats, lons, nc_lags
+
+
+def generate_best_mov_plots(exp_dir, lags, plots_base, mov_filter=None):
+    """
+    Carrega os merged NCs de todos os MoVs de exp_dir, gera os plots de melhor
+    MoV por pixel (geral + um por lag) e salva um PDF consolidado.
+    Saída em: plots_base/best_mov/
+    """
+    from PIL import Image
+
+    exp_dir = Path(exp_dir)
+    exp_n = int(exp_dir.name.replace("exp", ""))
+
+    ac_stack, r2_stack, mov_names, lats, lons, nc_lags = _load_mov_stack(
+        exp_dir, mov_filter=mov_filter
+    )
+    if not mov_names:
+        print(f"  [AVISO] Nenhum NC merged encontrado em {exp_dir}")
+        return
+
+    print(f"  MoVs ({len(mov_names)}): {mov_names}")
+
     if lags is not None:
         idx = [nc_lags.index(l) for l in lags if l in nc_lags]
         display_lags = [nc_lags[i] for i in idx]
@@ -1347,11 +1375,6 @@ def generate_best_mov_plots(exp_dir, lags, plots_base, mov_filter=None):
         r2_stack = r2_stack[:, :, idx]
     else:
         display_lags = nc_lags
-
-    if len(lats) > 1 and lats[0] > lats[-1]:
-        lats = lats[::-1]
-        ac_stack = ac_stack[:, :, :, ::-1, :]
-        r2_stack = r2_stack[:, :, :, ::-1, :]
 
     plots_dir = Path(plots_base) / "best_mov"
     pngs = []
@@ -1372,3 +1395,297 @@ def generate_best_mov_plots(exp_dir, lags, plots_base, mov_filter=None):
     for img in imgs:
         img.close()
     print(f"  PDF: {pdf_path.name}  ({len(pngs)} páginas)")
+
+
+# ── PREDEP máximo por trimestre, um arquivo por estação (comparação datasets) ─
+
+def _max_and_best_mov(slc):
+    """
+    slc: (n_movs, n_lags, n_lat, n_lon) — α de uma estação, todos os MoVs/lags.
+    Retorna (best_val, best_mov_idx, valid, gap), todos (n_lat, n_lon): o α
+    máximo por pixel (sobre MoV e lag), o índice do MoV responsável por esse
+    máximo (NaN onde não há sinal em nenhum MoV/lag), a máscara de pixels
+    válidos, e `gap` = diferença entre o 1º e o 2º melhor MoV (por α máximo
+    sobre lag) — usado para marcar pixels "ambíguos" quando o gap é menor
+    que a margem de ruído do bootstrap (ver plot_predep_max_comparison_season).
+    """
+    n_movs, n_lags, n_lat, n_lon = slc.shape
+    best_val = np.nanmax(slc.reshape(n_movs * n_lags, n_lat, n_lon), axis=0)
+    per_mov_max = np.nanmax(slc, axis=1)            # (n_movs, n_lat, n_lon)
+
+    all_nan = np.all(np.isnan(per_mov_max), axis=0)
+    best_val = np.where(all_nan, np.nan, best_val)
+    best_mov_idx = np.full((n_lat, n_lon), np.nan)
+    gap = np.full((n_lat, n_lon), np.nan)
+    valid = ~all_nan
+
+    filled = np.where(np.isnan(per_mov_max[:, valid]), -np.inf, per_mov_max[:, valid])
+    order = np.argsort(filled, axis=0)
+    best_mov_idx[valid] = order[-1].astype(float)
+    sorted_vals = np.sort(filled, axis=0)
+    top1 = sorted_vals[-1]
+    top2 = sorted_vals[-2] if n_movs >= 2 else np.full_like(top1, -np.inf)
+    gap[valid] = top1 - top2
+
+    return best_val, best_mov_idx, valid, gap
+
+
+def plot_predep_max_season(ac_stack, mov_names, lats, lons, season_idx,
+                           season_name, dataset_label, plots_dir):
+    """
+    Uma estação, um dataset: painel esquerdo com o PREDEP (α) máximo espacial
+    (máximo sobre MoV e lag), painel direito com o MoV responsável por esse
+    máximo. Salva em plots_dir/predep_max_{dataset_label}_{season_name}.png.
+
+    ac_stack: (n_movs, n_seasons, n_lags, n_lat, n_lon)
+    """
+    cmap_alpha, norm_alpha = _make_alpha_cmap()
+    cmap_alpha.set_bad("white")
+    cmap_mov, norm_mov, mov_colors = _make_mov_cmap(mov_names)
+    cmap_mov_plot = copy.copy(cmap_mov)
+    cmap_mov_plot.set_bad(color=(0, 0, 0, 0))
+
+    extent = [float(lons.min()), float(lons.max()),
+              float(lats.min()), float(lats.max())]
+
+    best_val, best_mov_idx, valid, _gap = _max_and_best_mov(ac_stack[:, season_idx, :, :, :])
+    low_signal = valid & (best_val < SIGNAL_THRESHOLD)
+
+    fig, (ax_val, ax_mov) = plt.subplots(
+        1, 2, figsize=(12, 5.5),
+        gridspec_kw={"width_ratios": [1, 1]},
+    )
+
+    ax_val.set_facecolor("white")
+    im_alpha = ax_val.imshow(
+        np.ma.masked_invalid(best_val),
+        cmap=cmap_alpha, norm=norm_alpha,
+        origin="lower", aspect="auto",
+        interpolation="nearest", extent=extent,
+    )
+    ax_val.axis("off")
+    ax_val.set_title("PREDEP máximo (α)", fontsize=14, fontweight="bold")
+    fig.colorbar(im_alpha, ax=ax_val, fraction=0.046, pad=0.04,
+                 ticks=np.arange(0, 1.1, 0.2)).set_label("α", fontsize=12)
+
+    ax_mov.set_facecolor("white")
+    gray_layer = np.where(low_signal, 0.75, np.nan)
+    ax_mov.imshow(
+        np.ma.masked_invalid(gray_layer),
+        cmap="gray", vmin=0, vmax=1,
+        origin="lower", aspect="auto",
+        interpolation="nearest", extent=extent,
+    )
+    ax_mov.imshow(
+        np.ma.masked_invalid(np.where(low_signal, np.nan, best_mov_idx)),
+        cmap=cmap_mov_plot, norm=norm_mov,
+        origin="lower", aspect="auto",
+        interpolation="nearest", extent=extent,
+    )
+    ax_mov.axis("off")
+    ax_mov.set_title("MoV responsável", fontsize=14, fontweight="bold")
+
+    handles = [Patch(color=mov_colors[i], label=mov_names[i])
+               for i in range(len(mov_names))]
+    fig.legend(handles=handles, loc="lower center",
+               ncol=min(len(mov_names), 8), fontsize=9,
+               bbox_to_anchor=(0.5, -0.05), frameon=True)
+
+    plt.suptitle(f"PREDEP máximo — {dataset_label} — {season_name}",
+                 fontsize=16, fontweight="bold")
+
+    plots_dir = Path(plots_dir)
+    plots_dir.mkdir(parents=True, exist_ok=True)
+    out = plots_dir / f"predep_max_{dataset_label}_{season_name}.png"
+    plt.savefig(out, dpi=100, bbox_inches="tight")
+    plt.close()
+    print(f"  Salvo: {out.name}")
+    return out
+
+
+def plot_predep_max_comparison_season(ac_stack_chirps, ac_stack_xavier, mov_names,
+                                      lats, lons, season_idx, season_name,
+                                      plots_dir, margin=None):
+    """
+    Uma estação, CHIRPS vs Xavier lado a lado (3x2): linha 1 = PREDEP máximo
+    (α) de cada fonte + diferença absoluta; linha 2 = MoV responsável de cada
+    fonte + concordância espacial.
+
+    `margin`: se `None` (padrão), comportamento original — diferença bruta e
+    concordância binária (verde = mesmo MoV, cinza = MoV diferente ou sinal
+    fraco). Se um float (ex.: 0.05, calibrado empiricamente a partir do
+    ruído de bootstrap não-seedado do predep() — ver
+    predep-chirps-vs-xavier-weekly-comparison na memória do projeto):
+      - painel de diferença: pixels com |Δα| < margin viram "não
+        significativo" (cinza claro) em vez de coloridos pela escala;
+      - painéis de MoV: pixels onde o gap entre o 1º e o 2º MoV é menor que
+        `margin` viram "ambíguo" (tom terroso), categoria separada do cinza
+        de "sem sinal";
+      - concordância: 3 categorias — coincidente/não coincidente (só entre
+        pixels "confiáveis" nos dois lados) e inconclusivo (sem sinal ou
+        ambíguo em algum lado).
+
+    Os dois datasets precisam ter o mesmo grid e a mesma lista/ordem de
+    mov_names (ex.: saída de experiments/08_predep_parana_recompute.py, que
+    usa a mesma máscara de pixels nos dois lados). Salva em
+    plots_dir/predep_max_comparison_{season_name}.png (ou
+    predep_max_comparison_{season_name}_margin.png se `margin` for dado).
+
+    ac_stack_*: (n_movs, n_seasons, n_lags, n_lat, n_lon)
+    """
+    AMBIG_COLOR = "#c9a876"
+    NONSIG_COLOR = "#d9d9d9"
+
+    cmap_alpha, norm_alpha = _make_alpha_cmap()
+    cmap_alpha.set_bad("white")
+    cmap_mov, norm_mov, mov_colors = _make_mov_cmap(mov_names)
+    cmap_mov_plot = copy.copy(cmap_mov)
+    cmap_mov_plot.set_bad(color=(0, 0, 0, 0))
+    cmap_diff = copy.copy(plt.cm.Purples)
+    cmap_diff.set_bad("white")
+
+    extent = [float(lons.min()), float(lons.max()),
+              float(lats.min()), float(lats.max())]
+
+    val_c, mov_c, valid_c, gap_c = _max_and_best_mov(ac_stack_chirps[:, season_idx, :, :, :])
+    val_x, mov_x, valid_x, gap_x = _max_and_best_mov(ac_stack_xavier[:, season_idx, :, :, :])
+    both_valid = valid_c & valid_x
+
+    diff = np.full(val_c.shape, np.nan)
+    diff[both_valid] = np.abs(val_c[both_valid] - val_x[both_valid])
+
+    low_c = valid_c & (val_c < SIGNAL_THRESHOLD)
+    low_x = valid_x & (val_x < SIGNAL_THRESHOLD)
+
+    if margin is not None:
+        ambig_c = valid_c & ~low_c & (gap_c < margin)
+        ambig_x = valid_x & ~low_x & (gap_x < margin)
+    else:
+        ambig_c = np.zeros_like(low_c)
+        ambig_x = np.zeros_like(low_x)
+    confident_c = valid_c & ~low_c & ~ambig_c
+    confident_x = valid_x & ~low_x & ~ambig_x
+
+    if margin is not None:
+        both_confident = confident_c & confident_x
+        agree = np.full(val_c.shape, np.nan)
+        agree[both_valid] = 0.0  # inconclusivo (padrão dentro do footprint)
+        agree[both_confident] = np.where(
+            mov_c[both_confident] == mov_x[both_confident], 2.0, 1.0
+        )
+        cmap_agree = ListedColormap(["#999999", "#d9534f", "#2ca02c"])
+        agree_vmax = 2
+        agree_handles = [
+            Patch(color="#2ca02c", label="Coincidente"),
+            Patch(color="#d9534f", label="Não coincidente"),
+            Patch(color="#999999", label="Inconclusivo (sem sinal/ambíguo)"),
+        ]
+        n_conclusive = int(np.sum(both_confident))
+        n_footprint = int(np.sum(both_valid))
+        pct_agree = (100 * np.sum(agree == 2.0) / n_conclusive) if n_conclusive else float("nan")
+        print(f"  [{season_name}] margem={margin}: {n_conclusive}/{n_footprint} pixels "
+              f"conclusivos ({100*n_conclusive/n_footprint:.0f}%)  |  "
+              f"concordância entre conclusivos: {pct_agree:.0f}%")
+    else:
+        agree = np.full(val_c.shape, np.nan)
+        agree[both_valid] = (mov_c[both_valid] == mov_x[both_valid]).astype(float)
+        agree[both_valid & (low_c | low_x)] = 0.0
+        cmap_agree = ListedColormap(["#999999", "#2ca02c"])
+        agree_vmax = 1
+        agree_handles = [Patch(color="#2ca02c", label="Coincidente"),
+                         Patch(color="#999999", label="Não Coincidente")]
+    cmap_agree.set_bad("white")
+
+    fig, axes = plt.subplots(2, 3, figsize=(17, 10.5))
+
+    for ax, val, title in ((axes[0, 0], val_c, "CHIRPS"), (axes[0, 1], val_x, "XAVIER")):
+        im = ax.imshow(
+            np.ma.masked_invalid(val), cmap=cmap_alpha, norm=norm_alpha,
+            origin="lower", aspect="auto", interpolation="nearest", extent=extent,
+        )
+        ax.set_title(f"PREDEP máximo (α) — {title}", fontsize=13, fontweight="bold")
+        ax.axis("off")
+        plt.colorbar(im, ax=ax, shrink=0.8, ticks=np.arange(0, 1.1, 0.2)).set_label("α", fontsize=10)
+
+    ax = axes[0, 2]
+    if margin is not None:
+        nonsig = both_valid & (diff < margin)
+        nonsig_layer = np.where(nonsig, 1.0, np.nan)
+        ax.imshow(
+            np.ma.masked_invalid(nonsig_layer),
+            cmap=ListedColormap([NONSIG_COLOR]), vmin=0, vmax=1,
+            origin="lower", aspect="auto", interpolation="nearest", extent=extent,
+        )
+        diff_display = np.where(nonsig, np.nan, diff)
+    else:
+        diff_display = diff
+    im = ax.imshow(
+        np.ma.masked_invalid(diff_display), cmap=cmap_diff, vmin=0, vmax=1,
+        origin="lower", aspect="auto", interpolation="nearest", extent=extent,
+    )
+    title_suffix = f"  (cinza = Δ < {margin})" if margin is not None else ""
+    ax.set_title(f"Diferença PREDEP máximo (α) (|CHIRPS-XAVIER|){title_suffix}",
+                fontsize=12 if margin is not None else 13, fontweight="bold")
+    ax.axis("off")
+    plt.colorbar(im, ax=ax, shrink=0.8).set_label("|Δα|", fontsize=10)
+
+    for ax, mov_idx, low, ambig, title in (
+        (axes[1, 0], mov_c, low_c, ambig_c, "CHIRPS"),
+        (axes[1, 1], mov_x, low_x, ambig_x, "XAVIER"),
+    ):
+        gray_layer = np.where(low, 0.75, np.nan)
+        ax.imshow(
+            np.ma.masked_invalid(gray_layer), cmap="gray", vmin=0, vmax=1,
+            origin="lower", aspect="auto", interpolation="nearest", extent=extent,
+        )
+        if margin is not None:
+            ambig_layer = np.where(ambig, 1.0, np.nan)
+            ax.imshow(
+                np.ma.masked_invalid(ambig_layer),
+                cmap=ListedColormap([AMBIG_COLOR]), vmin=0, vmax=1,
+                origin="lower", aspect="auto", interpolation="nearest", extent=extent,
+            )
+        hide = low | ambig
+        ax.imshow(
+            np.ma.masked_invalid(np.where(hide, np.nan, mov_idx)),
+            cmap=cmap_mov_plot, norm=norm_mov,
+            origin="lower", aspect="auto", interpolation="nearest", extent=extent,
+        )
+        ax.set_title(f"MoV responsável — {title}", fontsize=13, fontweight="bold")
+        ax.axis("off")
+
+    ax = axes[1, 2]
+    ax.imshow(
+        np.ma.masked_invalid(agree), cmap=cmap_agree, vmin=0, vmax=agree_vmax,
+        origin="lower", aspect="auto", interpolation="nearest", extent=extent,
+    )
+    ax.set_title("Concordância de MoVs", fontsize=13, fontweight="bold")
+    ax.axis("off")
+    ax.legend(handles=agree_handles, loc="upper right", fontsize=8, framealpha=0.9)
+
+    mov_handles = [Patch(color=mov_colors[i], label=mov_names[i])
+                  for i in range(len(mov_names))]
+    if margin is not None:
+        mov_handles += [
+            Patch(color=AMBIG_COLOR, label=f"Ambíguo (Δ MoV < {margin})"),
+        ]
+    fig.legend(handles=mov_handles, loc="lower center",
+               ncol=min(len(mov_handles), 12), fontsize=9,
+               bbox_to_anchor=(0.5, 0.0), frameon=True)
+
+    title_note = f"  —  margem de ruído = {margin}" if margin is not None else ""
+    fig.suptitle(
+        f"Comparação PREDEP máximo e MoVs Responsáveis — CHIRPS vs XAVIER — {season_name}{title_note}",
+        fontsize=16 if margin is not None else 17, fontweight="bold",
+    )
+
+    fig.tight_layout(rect=[0, 0.08, 1, 0.95])
+
+    suffix = "_margin" if margin is not None else ""
+    plots_dir = Path(plots_dir)
+    plots_dir.mkdir(parents=True, exist_ok=True)
+    out = plots_dir / f"predep_max_comparison_{season_name}{suffix}.png"
+    plt.savefig(out, dpi=110, bbox_inches="tight")
+    plt.close()
+    print(f"  Salvo: {out.name}")
+    return out

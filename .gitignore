@@ -81,3 +81,7 @@ Thumbs.db
 
 # Config files (except templates)
 config/local_*.yaml
+
+# Experiments
+experiments/**
+experiments/**/results/

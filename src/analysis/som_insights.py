@@ -82,6 +82,7 @@ def build_feature_matrix(
     season_filter: str = None,
     strict: bool = False,
     variable: str = "alpha_core",
+    nc_suffix: str = _NC_SUFFIX,
 ) -> FeatureBundle:
     """
     Lê os NCs Brazil-wide de cada MoV em exp_dir e monta a matriz de features.
@@ -92,6 +93,9 @@ def build_feature_matrix(
     comparável ao de alpha_core (mesmo footprint/pixels, mesma ordem de
     features), permitindo treinar um SOM equivalente sobre r² para
     comparação lado a lado com o SOM de PREDEP.
+
+    `nc_suffix` permite apontar para NCs com sufixo diferente (ex.:
+    "_predep_granular_seasonal_chirps" para o experimento CHIRPS).
     """
     import xarray as xr
 
@@ -102,14 +106,14 @@ def build_feature_matrix(
             continue
         if mov_filter and mov_dir.name not in mov_filter:
             continue
-        nc = mov_dir / f"{mov_dir.name}{_NC_SUFFIX}.nc"
+        nc = mov_dir / f"{mov_dir.name}{nc_suffix}.nc"
         if nc.exists():
             datasets.append(xr.open_dataset(nc))
             mov_names.append(mov_dir.name)
 
     if not datasets:
         raise FileNotFoundError(
-            f"Nenhum NC Brazil-wide ('{{MoV}}{_NC_SUFFIX}.nc') encontrado em {exp_dir}"
+            f"Nenhum NC Brazil-wide ('{{MoV}}{nc_suffix}.nc') encontrado em {exp_dir}"
         )
 
     # Grids iguais entre MoVs; outer-join garante alinhamento.

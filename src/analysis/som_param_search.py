@@ -31,6 +31,7 @@ from minisom import MiniSom  # noqa: E402
 
 from src.analysis.som_insights import (  # noqa: E402
     SEASONS,
+    _NC_SUFFIX,
     FeatureBundle,
     build_feature_matrix,
     train_som,
@@ -346,6 +347,7 @@ def run_season_search(
     num_iteration: int = 10000,
     seed: int = 42,
     verbose: bool = True,
+    nc_suffix: str = _NC_SUFFIX,
 ) -> SeasonSearchResult:
     """
     Executa sweep_g → treina SOM ótimo → sweep_k para uma estação (ou todas).
@@ -359,6 +361,8 @@ def run_season_search(
     lags : lags em meses (None = padrão de build_feature_matrix).
     standardize, learning_rate, num_iteration, seed : hiperparâmetros.
     verbose : imprime progresso.
+    nc_suffix : sufixo dos NCs por MoV (ex.: "_predep_granular_seasonal_xavier"
+        para os experimentos com fonte no nome do arquivo).
 
     Returns
     -------
@@ -370,6 +374,7 @@ def run_season_search(
     bundle = build_feature_matrix(
         exp_dir, mov_filter=mov_filter, lags=lags,
         standardize=standardize, season_filter=season,
+        nc_suffix=nc_suffix,
     )
     if verbose:
         print(f"  {bundle.X.shape[0]} pixels × {bundle.X.shape[1]} features")
@@ -440,6 +445,7 @@ def run_full_search(
     seasons: Optional[list] = None,
     include_all: bool = True,
     verbose: bool = True,
+    nc_suffix: str = _NC_SUFFIX,
 ) -> ParamSearchResult:
     """
     Ponto de entrada principal. Roda run_season_search para cada estação e
@@ -481,6 +487,7 @@ def run_full_search(
             learning_rate=learning_rate,
             num_iteration=num_iteration,
             seed=seed, verbose=verbose,
+            nc_suffix=nc_suffix,
         )
         per_season[sr.season] = sr
 

@@ -1,0 +1,187 @@
+# Datasets catalogados para o Kedro-Viz mostrar uma prévia real dos dados em
+# cada passo (pedido do usuário: "ver como estão sendo construídos os dados
+# usados para serem computados").
+#
+# IMPORTANTE — por que só ESTES passos estão catalogados: catalogar um
+# dataset no Kedro não é "salvar uma cópia para inspeção" — o runner
+# literalmente SALVA e RECARREGA o valor do arquivo entre o nó produtor e
+# qualquer nó consumidor (troca o objeto Python em memória pelo resultado
+# do round-trip via disco). Testado e confirmado nesta sessão que isso
+# quebra:
+#   - pandas.Series com índice não-trivial (DatetimeIndex, índice de mês)
+#     -> volta do CSV como DataFrame com RangeIndex genérico.
+#   - dict com chaves inteiras (ex.: {0: valor, 1: valor, ...}) via JSON
+#     -> chaves viram string (JSON não tem chave inteira).
+# Por isso `pixel`, `pixel_series`, `climatology`, `anomaly`,
+# `anomaly_*`, `alpha_*`, `r2_*` ficam como MemoryDataset (implícito, sem
+# entrada aqui) — catalogá-los exigiria normalizar tipo/chave em cada nó
+# consumidor, risco desnecessário para uma pipeline de demonstração.
+#
+# Os 3 passos abaixo SÃO seguros: já são DataFrames "tidy" (colunas planas,
+# RangeIndex trivial), então salvar+recarregar não muda nada:
+#   - aligned_* — o momento mais importante para validar a construção dos
+#     dados: o MoV já alinhado no lag, lado a lado com a anomalia de
+#     precipitação, por observação — exatamente o que entra na equação.
+#   - result_* / predep_results — os resultados finais (α, r², n_obs).
+#
+# `metadata.kedro-viz.preview_args` é OBRIGATÓRIO para o Kedro-Viz de fato
+# chamar `.preview()` do dataset — sem isso o preview fica desabilitado por
+# padrão, mesmo com o tipo certo declarado.
+
+# ── Pipelines data_prep / predep_production / analysis ───────────────────
+# Todos são saídas terminais ou DataFrames planos — sem risco de round-trip.
+
+parana_mask_info:
+  type: json.JSONDataset
+  filepath: data/parana_mask_info.json
+  metadata:
+    kedro-viz:
+      preview_args: {}
+
+predep_summary_xavier:
+  type: pandas.CSVDataset
+  filepath: data/predep_summary_xavier.csv
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 5
+predep_summary_chirps:
+  type: pandas.CSVDataset
+  filepath: data/predep_summary_chirps.csv
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 5
+
+predep_max_stats:
+  type: pandas.CSVDataset
+  filepath: data/predep_max_stats.csv
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 4   # uma linha por estação
+
+som_comparison_stats:
+  type: pandas.CSVDataset
+  filepath: data/som_comparison_stats.csv
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 2   # uma linha por fonte
+
+# ── Pipelines som_insights / som_param_search ────────────────────────────
+som_insights_files_xavier:
+  type: pandas.CSVDataset
+  filepath: data/som_insights_files_xavier.csv
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 2
+som_insights_files_chirps:
+  type: pandas.CSVDataset
+  filepath: data/som_insights_files_chirps.csv
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 2
+
+pareto_search_stats:
+  type: pandas.CSVDataset
+  filepath: data/pareto_search_stats.csv
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 2   # uma linha por fonte
+gk_sweep_stats:
+  type: pandas.CSVDataset
+  filepath: data/gk_sweep_stats.csv
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 10  # fonte x estacao
+
+# ── Pipeline predep_demo ─────────────────────────────────────────────────
+aligned_DJF:
+  type: pandas.CSVDataset
+  filepath: data/aligned_DJF.csv
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 10
+aligned_MAM:
+  type: pandas.CSVDataset
+  filepath: data/aligned_MAM.csv
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 10
+aligned_JJA:
+  type: pandas.CSVDataset
+  filepath: data/aligned_JJA.csv
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 10
+aligned_SON:
+  type: pandas.CSVDataset
+  filepath: data/aligned_SON.csv
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 10
+
+result_DJF:
+  type: pandas.CSVDataset
+  filepath: data/result_DJF.csv
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 6
+result_MAM:
+  type: pandas.CSVDataset
+  filepath: data/result_MAM.csv
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 6
+result_JJA:
+  type: pandas.CSVDataset
+  filepath: data/result_JJA.csv
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 6
+result_SON:
+  type: pandas.CSVDataset
+  filepath: data/result_SON.csv
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 6
+
+predep_results:
+  type: pandas.CSVDataset
+  filepath: data/predep_results.csv
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 24  # 4 estações x 6 lags — mostra tudo
+
+# ── Pipeline predominancia (exp 22–26) ───────────────────────────────────
+# As duas saídas terminais são DataFrames planos — seguros para round-trip.
+# `predominancia_metricas` é o artefato de reprodutibilidade: comparar este
+# CSV entre execuções vale mais do que comparar as figuras no olho.
+predominancia_figuras:
+  type: pandas.CSVDataset
+  filepath: data/predominancia_figuras.csv
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 2
+predominancia_metricas:
+  type: pandas.CSVDataset
+  filepath: data/predominancia_metricas.csv
+  metadata:
+    kedro-viz:
+      preview_args:
+        nrows: 5   # 4 estações + ANO

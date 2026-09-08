@@ -1,0 +1,113 @@
+# ── Caminhos (relativos à raiz do repo) ──────────────────────────────────
+paths:
+  xavier_monthly: data/processed/xavier_monthly/pr_monthly_1961_2019_BRAZIL_combined.nc
+  chirps_raw: data/raw/chirps_daily/chirps_v2.nc
+  chirps_monthly: data/processed/chirps_monthly/pr_monthly_1981_2026_CHIRPS_0p1deg.nc
+  parana_mask: data/processed/chirps_monthly/parana_combined_mask.npz
+  basin_dir: data/clusters/parana
+  mov_indices_dir: data/raw/mov_indices
+  plots_dir_weekly: plots/weekly_20260831_chirps_vs_xavier
+  plots_dir_predep_max: plots/weekly_20260831_chirps_vs_xavier/predep_max
+
+# ── Produção (Stage 2 — o job Modal) ─────────────────────────────────────
+# exp_dir: qual experimento os nós de produção leem/validam.
+# `exp08_parana_recompute_unseeded_v1` é o que tem os 23+23 NCs calculados
+# hoje; `exp08_parana_recompute` está vazio, esperando o recálculo com seed
+# fixa (bloqueado pelo spend limit do Modal).
+exp_dir: exp08_parana_recompute_unseeded_v1
+
+sources:
+  xavier: xavier
+  chirps: chirps
+
+movs: [AAO, AMO, AO, EPNP, IASAS, ITSMRG2, MEI, NAO, NIN03, NIN034, NIN04,
+       NIN12, ONI, PDO, PNA, QBO, SAODI, SASDI, SIOD, SOI, TNA, TSA, WP]
+
+run_params:
+  # false = modo resume (não chama o Modal; valida/carrega os NCs já
+  # calculados). true = dispara `modal run experiments/08_...` de verdade.
+  allow_modal_dispatch: false
+  n_boot: 5000
+  seed: 123
+  max_parallel: 15
+
+# ── Análise (Stages 4/5) ─────────────────────────────────────────────────
+som:
+  lags: [0, 1, 3, 6, 9, 12]
+  n_regimes: 7
+  seed: 123
+  iterations: 10000
+  som_size: 0        # 0 = heurística g = clip(ceil(sqrt(5*sqrt(n))), 8, 30)
+  top_k: 3           # top-k MoVs por pixel na concordância local
+
+analysis:
+  # Margem de ruído calibrada empiricamente (2026-08-31) contra a variação
+  # do bootstrap não-seedado do predep(): mediana do range ≈0.065,
+  # 2×desvio-padrão mediano ≈0.044. `null` desliga a margem.
+  margin: 0.05
+  som_caveat: "Ressalva: os dados de entrada (PREDEP alpha) foram calculados com bootstrap sem seed fixa. Parte da divergencia entre os dois SOMs pode ser ruido de estimacao -- correcao (seed fixa) ja implementada, recalculo pendente."
+
+# ── Bundle de insights do SOM (pipeline som_insights) ────────────────────
+som_insights:
+  # pasta de saída: plots/exp{NN}/som/ — mesma convenção da produção
+  exp_label_xavier: 8
+  exp_label_chirps: 9
+  # diagnósticos na grade do SOM (U-matrix, hitmap, component planes):
+  # equivalem ao --som-diagnostics do generate_som_insights.py
+  diagnostics: false
+
+# ── Busca de hiperparâmetros do SOM (pipeline som_param_search) ──────────
+param_search:
+  # Mecanismo 1 — Pareto QE×TE + auto-K (o --optimize --auto-k).
+  # search_sample_size/search_epochs barateiam só a VARREDURA; o vencedor é
+  # sempre retreinado na base completa. Com estes valores levou ~80s/fonte.
+  pareto:
+    iterations: 10000
+    seed: 123
+    search_sample_size: 3000
+    search_epochs: 2
+  # Mecanismo 2 — varredura explícita g/k (som_param_search.run_full_search).
+  # Ranges REDUZIDOS de propósito: o default da ferramenta (g 5..20 × 5
+  # estações = 80 treinos) leva ~20min nesta base. Aumente para a busca
+  # completa.
+  sweep:
+    g_range: [8, 12, 16, 20]
+    k_range: [4, 6, 8, 10, 12]
+    lags: [0, 1, 3, 6, 9, 12]
+    seasons: ["DJF"]
+    include_all: false
+    iterations: 10000
+    seed: 123
+
+# ── Pipeline de demonstração (predep_demo, nível-equação) ────────────────
+source: xavier            # xavier | chirps
+mov_name: ONI
+time_start: "1981-01-01"
+time_end: "2019-12-31"
+lags: [0, 1, 3, 6, 9, 12]
+n_boot: 5000
+seed: 123
+
+# Literais de estação passados como parâmetro (não via functools.partial) de
+# propósito: assim o Kedro-Viz consegue extrair o código-fonte/docstring
+# real dos nós (inspect.getsource falha em objetos functools.partial).
+season_DJF: "DJF"
+season_MAM: "MAM"
+season_JJA: "JJA"
+season_SON: "SON"
+
+# ── Metodologia da predominância (exp 22–26) ─────────────────────────────
+# Cadeia documentada em METODOLOGIA_PREDOMINANCIA.md. Os dois primeiros
+# passos reduzem as fatias já calculadas em /slices18 no volume Modal
+# `predep-common-window` — não recalculam PREDEP, mas exigem sessão Modal.
+# Por isso o padrão é resume: os nós conferem os NetCDFs já baixados.
+predominancia:
+  allow_modal_dispatch: false
+  forcar_som: false          # true = retreina os 192 SOMs (~15 min)
+  predep: results/exp22_predep_max_novo.nc
+  features: results/exp23_som_features.nc
+  som: results/exp26_som_completo.nc
+  plots_dir: plots
+  n_regimes: [4, 5, 6]
+  k_mapa: 4                  # k usado nos mapas e nas assinaturas
+  tol: 0.10                  # |α_chirps − α_xavier| da máscara de concordância

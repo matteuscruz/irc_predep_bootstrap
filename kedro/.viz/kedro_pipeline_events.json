@@ -1,0 +1,150 @@
+[
+  {
+    "event": "before_pipeline_run",
+    "timestamp": "2026-09-08T12:30:07.388889+00:00"
+  },
+  {
+    "event": "after_dataset_loaded",
+    "dataset": "params:predominancia",
+    "node_id": "9f26cea0",
+    "status": "Available",
+    "size": 0
+  },
+  {
+    "event": "after_dataset_loaded",
+    "dataset": "params:predominancia.allow_modal_dispatch",
+    "node_id": "7b2038d0",
+    "status": "Available",
+    "size": 0
+  },
+  {
+    "event": "after_node_run",
+    "node": "preparar_grids",
+    "node_id": "1f342981",
+    "duration": 0.0019179749997420004,
+    "status": "success"
+  },
+  {
+    "event": "after_dataset_saved",
+    "dataset": "predominancia_grids",
+    "node_id": "13ec4c3e",
+    "status": "Available",
+    "size": 0
+  },
+  {
+    "event": "after_dataset_loaded",
+    "dataset": "predominancia_grids",
+    "node_id": "13ec4c3e",
+    "status": "Available",
+    "size": 0
+  },
+  {
+    "event": "after_dataset_loaded",
+    "dataset": "params:predominancia",
+    "node_id": "9f26cea0",
+    "status": "Available",
+    "size": 0
+  },
+  {
+    "event": "after_dataset_loaded",
+    "dataset": "params:predominancia.forcar_som",
+    "node_id": "02ae5e68",
+    "status": "Available",
+    "size": 0
+  },
+  {
+    "event": "after_node_run",
+    "node": "rodar_som",
+    "node_id": "902e8dcf",
+    "duration": 1091.8392299259995,
+    "status": "success"
+  },
+  {
+    "event": "after_dataset_saved",
+    "dataset": "predominancia_som_nc",
+    "node_id": "1edcb6fc",
+    "status": "Available",
+    "size": 0
+  },
+  {
+    "event": "after_dataset_loaded",
+    "dataset": "predominancia_grids",
+    "node_id": "13ec4c3e",
+    "status": "Available",
+    "size": 0
+  },
+  {
+    "event": "after_dataset_loaded",
+    "dataset": "predominancia_som_nc",
+    "node_id": "1edcb6fc",
+    "status": "Available",
+    "size": 0
+  },
+  {
+    "event": "after_dataset_loaded",
+    "dataset": "params:predominancia.plots_dir",
+    "node_id": "b6a7aa65",
+    "status": "Available",
+    "size": 0
+  },
+  {
+    "event": "after_dataset_loaded",
+    "dataset": "params:predominancia.k_mapa",
+    "node_id": "01950cf6",
+    "status": "Available",
+    "size": 0
+  },
+  {
+    "event": "after_node_run",
+    "node": "gerar_figuras",
+    "node_id": "1f6097bb",
+    "duration": 9.393127729000298,
+    "status": "success"
+  },
+  {
+    "event": "after_dataset_saved",
+    "dataset": "predominancia_figuras",
+    "node_id": "92752c27",
+    "status": "Available",
+    "size": 216
+  },
+  {
+    "event": "after_dataset_loaded",
+    "dataset": "predominancia_grids",
+    "node_id": "13ec4c3e",
+    "status": "Available",
+    "size": 0
+  },
+  {
+    "event": "after_dataset_loaded",
+    "dataset": "predominancia_som_nc",
+    "node_id": "1edcb6fc",
+    "status": "Available",
+    "size": 0
+  },
+  {
+    "event": "after_dataset_loaded",
+    "dataset": "params:predominancia.k_mapa",
+    "node_id": "01950cf6",
+    "status": "Available",
+    "size": 0
+  },
+  {
+    "event": "after_node_run",
+    "node": "resumir_metricas",
+    "node_id": "dfba9c26",
+    "duration": 0.04298349200053053,
+    "status": "success"
+  },
+  {
+    "event": "after_dataset_saved",
+    "dataset": "predominancia_metricas",
+    "node_id": "7a9325b8",
+    "status": "Available",
+    "size": 402
+  },
+  {
+    "event": "after_pipeline_run",
+    "timestamp": "2026-09-08T12:48:29.360463+00:00"
+  }
+]

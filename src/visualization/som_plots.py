@@ -70,15 +70,24 @@ def _draw_outlines_only(ax, basin_outlines):
 
 
 def plot_regime_map(regime_grid, bundle, fingerprints, output_dir, exp_n,
-                    basin_outlines=None):
-    """Mapa geográfico do Brasil pintado pelo regime SOM de cada pixel."""
+                    basin_outlines=None, ax=None, title=None):
+    """Mapa geográfico do Brasil pintado pelo regime SOM de cada pixel.
+
+    Se `ax` for passado, desenha nele (sem salvar/fechar figura — uso em
+    small-multiples, ex.: plot_som_comparison) e retorna `ax`; caso
+    contrário, cria a própria figura, salva em
+    output_dir/som_regime_map_exp{exp_n:02d}.png e retorna o Path.
+    """
     n_regimes = len(fingerprints)
     cmap, norm, colors = _make_regime_cmap(n_regimes)
     lats, lons = bundle.lats, bundle.lons
     extent = [float(lons.min()), float(lons.max()),
               float(lats.min()), float(lats.max())]
 
-    fig, ax = plt.subplots(figsize=(10, 10))
+    standalone = ax is None
+    if standalone:
+        fig, ax = plt.subplots(figsize=(10, 10))
+
     ax.imshow(np.ma.masked_invalid(regime_grid), cmap=cmap, norm=norm,
               origin="lower", extent=extent, aspect="auto",
               interpolation="nearest")
@@ -86,7 +95,7 @@ def plot_regime_map(regime_grid, bundle, fingerprints, output_dir, exp_n,
         _draw_basin_outlines(ax, basin_outlines)
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
-    ax.set_title(f"Regimes de previsibilidade (SOM) — exp{exp_n:02d}")
+    ax.set_title(title or f"Regimes de previsibilidade (SOM) — exp{exp_n:02d}")
 
     # MoV "característico" = maior anomalia vs média entre regimes (ENSO domina
     # o α absoluto em todo lugar, então o argmax bruto não distingue regimes).
@@ -98,11 +107,68 @@ def plot_regime_map(regime_grid, bundle, fingerprints, output_dir, exp_n,
         size = fingerprints[r]["size"]
         handles.append(Patch(facecolor=colors[r], edgecolor="black",
                              label=f"R{r}: {top_mov}↑ (n={size})"))
-    ax.legend(handles=handles, loc="lower left", fontsize=8, framealpha=0.9,
+    ax.legend(handles=handles, loc="lower left", fontsize=7, framealpha=0.9,
               title="MoV característico (anomalia)")
+
+    if not standalone:
+        return ax
 
     out = Path(output_dir) / f"som_regime_map_exp{exp_n:02d}.png"
     fig.savefig(out, dpi=90, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  Salvo: {out.name}")
+    return out
+
+
+def plot_som_comparison(regime_grid_a, bundle_a, fingerprints_a, label_a,
+                        regime_grid_b, bundle_b, fingerprints_b, label_b,
+                        overlap_grid, top_k, output_dir, out_name,
+                        basin_outlines=None, caveat=None):
+    """
+    Uma imagem 1x3: mapa de regimes SOM de A, de B, e a intensidade de
+    concordância local entre eles (nº de MoVs em comum no top-k local de
+    cada pixel — ver som_insights.local_mov_importance — normalizado por
+    top_k). Regimes SOM não têm identidade compartilhada entre A e B (são
+    clusters independentes), então a comparação é feita pelo MoV, não pelo
+    id do regime.
+
+    `caveat`: texto opcional exibido no rodapé da figura (ex.: ressalva
+    sobre o bootstrap do predep() não ter seed fixa nos dados de entrada).
+    """
+    extent = _extent(bundle_a)
+
+    fig, axes = plt.subplots(1, 3, figsize=(26, 9))
+
+    plot_regime_map(regime_grid_a, bundle_a, fingerprints_a, output_dir, 0,
+                    basin_outlines=basin_outlines, ax=axes[0],
+                    title=f"Regimes de previsibilidade (SOM) — {label_a}")
+    plot_regime_map(regime_grid_b, bundle_b, fingerprints_b, output_dir, 0,
+                    basin_outlines=basin_outlines, ax=axes[1],
+                    title=f"Regimes de previsibilidade (SOM) — {label_b}")
+
+    ax = axes[2]
+    im = ax.imshow(np.ma.masked_invalid(overlap_grid), cmap="Purples",
+                   vmin=0, vmax=top_k, origin="lower", extent=extent,
+                   aspect="auto", interpolation="nearest")
+    if basin_outlines:
+        _draw_basin_outlines(ax, basin_outlines)
+    ax.set_xlabel("Longitude")
+    ax.set_ylabel("Latitude")
+    ax.set_title(f"Concordância local de MoVs — {label_a} vs {label_b}\n"
+                 f"(nº de MoVs em comum no top-{top_k} local de cada pixel)")
+    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04,
+                        ticks=range(top_k + 1))
+    cbar.set_label(f"MoVs em comum (de {top_k})", fontsize=10)
+
+    fig.suptitle(f"Comparação SOM — {label_a} vs {label_b}", fontsize=17, fontweight="bold")
+    bottom_rect = 0.06 if caveat else 0.0
+    fig.tight_layout(rect=[0, bottom_rect, 1, 0.95])
+    if caveat:
+        fig.text(0.5, 0.01, caveat, ha="center", va="bottom", fontsize=10,
+                 style="italic", color="#8a4b08", wrap=True)
+
+    out = Path(output_dir) / out_name
+    fig.savefig(out, dpi=100, bbox_inches="tight")
     plt.close(fig)
     print(f"  Salvo: {out.name}")
     return out

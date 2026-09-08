@@ -1,0 +1,36 @@
+[build-system]
+requires = [
+    "setuptools",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+requires-python = ">=3.10"
+name = "predep_viz"
+readme = "README.md"
+dynamic = [
+    "version",
+]
+dependencies = [
+    "kedro~=1.5.0",
+]
+
+[tool.setuptools.dynamic.version]
+attr = "predep_viz.__version__"
+
+[tool.setuptools.packages.find]
+where = [
+    "src",
+]
+namespaces = false
+
+[tool.kedro]
+package_name = "predep_viz"
+project_name = "PREDEP Pipeline Viz"
+kedro_init_version = "1.5.0"
+tools = ""
+example_pipeline = "False"
+source_dir = "src"
+
+[tool.kedro_telemetry]
+project_id = "08cd562dfec04990b25b57544b897ffa"

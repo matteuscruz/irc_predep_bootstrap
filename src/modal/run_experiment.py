@@ -183,7 +183,16 @@ def run_analysis():
                         
                         if len(mov_aligned) >= 10:
                             try:
-                                alpha = predep(np.array(precip_aligned), np.array(mov_aligned), n_boot=100)
+                                # X = MoV (preditor, particionado), Y = precipitação
+                                # (resposta). A ordem importa: o PREDEP é
+                                # assimétrico de propósito (P4 do artigo) e este
+                                # arquivo passava (precip, mov), medindo
+                                # alpha_{MoV|chuva} em vez de alpha_{chuva|MoV}.
+                                # As duas direções correlacionam +0.05 nos nossos
+                                # dados: são grandezas diferentes, não aproximações.
+                                alpha = predep(np.array(mov_aligned),
+                                               np.array(precip_aligned),
+                                               n_boot=5000)
                                 alpha_results[lag, i, j] = alpha
                             except:
                                 pass

@@ -1,0 +1,7 @@
+conf/local/**
+!conf/local/.gitkeep
+.ipynb_checkpoints/
+__pycache__/
+*.egg-info
+build/
+*.csv

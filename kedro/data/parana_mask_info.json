@@ -1,0 +1,16 @@
+{
+  "n_pixels": 7503,
+  "shape": [
+    113,
+    123
+  ],
+  "lat_range": [
+    -26.75,
+    -15.550000190734863
+  ],
+  "lon_range": [
+    -55.849998474121094,
+    -43.650001525878906
+  ],
+  "path": "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/data/processed/chirps_monthly/parana_combined_mask.npz"
+}

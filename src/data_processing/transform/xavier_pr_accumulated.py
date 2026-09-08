@@ -101,10 +101,11 @@ class XavierPrecipitationProcessor:
         """
         try:
             # Abrir com chunks para processamento eficiente
-            ds = xr.open_dataset(
-                file_path, 
-                chunks={'time': 100, 'lat': 50, 'lon': 50}  # Chunks otimizados
-            )
+            # Os NCs do Xavier usam 'latitude'/'longitude'; mantemos a versão curta
+            # como alternativa para não quebrar com outras convenções de nome.
+            ds = xr.open_dataset(file_path, chunks={'time': 100})
+            ds = ds.chunk({d: 50 for d in ('latitude', 'longitude', 'lat', 'lon')
+                           if d in ds.dims})
             
             logger.info(f"Dataset aberto: {file_path.name}")
             logger.info(f"  - Dimensões: {dict(ds.dims)}")
@@ -139,7 +140,14 @@ class XavierPrecipitationProcessor:
         
         # Calcular acumulado mensal usando resample
         # Converter mm/dia para mm/mês (somar todos os dias do mês)
-        monthly_ds = ds.resample(time='MS').sum(dim='time', skipna=True)
+        #
+        # min_count=1 garante que um mês sem nenhum dia válido vire NaN em vez de
+        # 0.0. Sem isso o `sum` com skipna=True trata all-NaN como zero, o que
+        # transformava todo o oceano em 0,0 mm — as 153.663 células da grade ficavam
+        # com `pr` finito, contra 70.815 células reais de bacia. Também injetava
+        # zeros espúrios só do lado Xavier na comparação com o CHIRPS, que já usa
+        # min_count=1 (ver chirps_pr_accumulated.py).
+        monthly_ds = ds.resample(time='MS').sum(dim='time', skipna=True, min_count=1)
         
         # Adicionar atributos descritivos
         if 'pr' in monthly_ds.data_vars:
@@ -149,7 +157,7 @@ class XavierPrecipitationProcessor:
                 'description': 'Monthly accumulated precipitation from daily Xavier dataset',
                 'processing_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 'original_units': 'mm/day',
-                'processing_method': 'sum_of_daily_values'
+                'processing_method': 'sum_of_daily_values (min_count=1)'
             })
         
         # Atualizar atributos globais
@@ -198,9 +206,13 @@ class XavierPrecipitationProcessor:
                 'dtype': 'float32'
             },
             'time': {'dtype': 'float64'},
-            'lat': {'dtype': 'float32'},
-            'lon': {'dtype': 'float32'}
         }
+        # Só codifica coordenadas que existem de fato: os NCs do Xavier usam
+        # 'latitude'/'longitude', e nomear 'lat'/'lon' fazia o to_netcdf levantar
+        # KeyError, quebrando todo o caminho de salvamento.
+        for coord in ('latitude', 'longitude', 'lat', 'lon'):
+            if coord in ds.coords:
+                encoding[coord] = {'dtype': 'float32'}
         
         # Salvar dataset
         ds.to_netcdf(

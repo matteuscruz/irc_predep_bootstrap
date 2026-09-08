@@ -53,7 +53,23 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--exp-n", type=int, default=0,
-                        help="Número do experimento (padrão: mais recente)")
+                        help="Número do experimento (padrão: mais recente). "
+                             "Com --source nc, também rotula a saída "
+                             "(plots/exp{N:02d}/...) mesmo quando --exp-dir "
+                             "aponta para um diretório com outro nome.")
+    parser.add_argument("--exp-dir", type=str, default=None,
+                        help="[--source nc] Override do diretório de entrada "
+                             "dos NCs (ex.: results/predep_granular_brazil/"
+                             "exp06_chirps_check). Se omitido, usa "
+                             "results/predep_granular_brazil/exp{--exp-n:02d}. "
+                             "Use junto de --exp-n para rotular a saída.")
+    parser.add_argument("--nc-suffix", type=str,
+                        default="_predep_granular_seasonal",
+                        help="[--source nc] Sufixo do arquivo NC de cada MoV, "
+                             "antes de '.nc' (padrão: "
+                             "'_predep_granular_seasonal'). Use "
+                             "'_predep_granular_seasonal_chirps' para o "
+                             "experimento CHIRPS.")
     parser.add_argument("--movs", type=str, default="",
                         help="MoVs separados por vírgula (padrão: todos)")
     parser.add_argument("--lags", type=str, default="0,1,3,6,9,12",
@@ -150,7 +166,7 @@ def main():
         exp_n = args.exp_n
     else:
         exp_n = args.exp_n if args.exp_n > 0 else latest_exp(results_base)
-        exp_dir = results_base / f"exp{exp_n:02d}"
+        exp_dir = Path(args.exp_dir) if args.exp_dir else results_base / f"exp{exp_n:02d}"
         if not exp_dir.exists():
             print(f"[ERRO] Experimento não encontrado: {exp_dir}")
             sys.exit(1)
@@ -193,7 +209,8 @@ def main():
     else:
         bundle = build_feature_matrix(exp_dir, mov_filter, lags,
                                       standardize=not args.no_standardize,
-                                      variable=args.variable)
+                                      variable=args.variable,
+                                      nc_suffix=args.nc_suffix)
     print(f"  Amostras (pixels): {bundle.X.shape[0]}  |  Features: {bundle.X.shape[1]}")
     print(f"  MoVs ({len(bundle.mov_names)}): {bundle.mov_names}")
     print(f"  Lags: {bundle.lags}  |  Estações: {bundle.seasons}")

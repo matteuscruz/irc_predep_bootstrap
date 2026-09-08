@@ -93,18 +93,9 @@ def _parse_lags_csv(lags_csv: str) -> list:
 
 def _precompute_mov_alignment(mov_lookup, s_years, s_months, lag):
     """Alinha o MoV para cada mês da estação dado um lag."""
-    import numpy as np
+    from src.predep_calculation.lag_alignment import precompute_mov_alignment
 
-    n = len(s_years)
-    aligned = np.full(n, np.nan)
-    for k in range(n):
-        tm = int(s_months[k]) - lag
-        ty = int(s_years[k])
-        while tm <= 0:
-            tm += 12
-            ty -= 1
-        aligned[k] = mov_lookup.get((ty, tm), np.nan)
-    return aligned
+    return precompute_mov_alignment(mov_lookup, s_years, s_months, lag)
 
 
 # ── Worker ────────────────────────────────────────────────────────────────────
@@ -114,19 +105,24 @@ def _compute_lag_worker(args):
     Worker: calcula PREDEP + r² em cada pixel para um lag.
     Usa _PRECIP_ARR_GLOBAL (n_obs, n_lat, n_lon) herdado via fork.
 
-    args: (lag, mov_aligned, n_boot, debug, basin_mask_flat)
+    args: (lag, mov_aligned, n_boot, debug, basin_mask_flat, binning)
       basin_mask_flat: bool array (n_lat*n_lon,) ou None (sem máscara)
-    Retorna (lag, ac_map, r2_map) — shape (n_lat, n_lon) cada.
+      binning: "ppb" (pontos-por-bin, primário) ou "sqrt" (regra do Algoritmo 1)
+    Retorna (lag, ac_map, r2_map, tied_map) — shape (n_lat, n_lon) cada.
+
+    `tied_map` é a fração de pares empatados da anomalia de precipitação. Não filtra
+    nada: serve para decidir a jusante quais células violam a premissa de continuidade
+    do PREDEP (átomo em zero na estação seca), sem precisar recomputar.
     """
     import numpy as np
     import warnings
     import time as _time
-    from src.predep_calculation.core import predep
+    from src.predep_calculation.core import predep  # noqa: F401
     from src.regression_calculation.core import regression_calc
 
     warnings.filterwarnings("ignore")
 
-    lag, mov_aligned, n_boot, debug, basin_mask_flat = args
+    lag, mov_aligned, n_boot, debug, basin_mask_flat, binning = args
     precip_arr = _PRECIP_ARR_GLOBAL  # (n_obs, n_lat, n_lon)
     n_lat = precip_arr.shape[1]
     n_lon = precip_arr.shape[2]
@@ -134,6 +130,7 @@ def _compute_lag_worker(args):
 
     ac_map = np.full((n_lat, n_lon), np.nan)
     r2_map = np.full((n_lat, n_lon), np.nan)
+    tied_map = np.full((n_lat, n_lon), np.nan)
     valid_mov = ~np.isnan(mov_aligned)
     t0 = _time.time()
 
@@ -165,7 +162,11 @@ def _compute_lag_worker(args):
                 X = mov_aligned[valid]
                 Y = pp[valid]
                 if len(np.unique(X)) >= 3 and len(np.unique(Y)) >= 3:
-                    ac_map[i, j] = predep(X, Y, n_boot)
+                    alpha, diag = predep(
+                        X, Y, binning=binning, return_diagnostics=True
+                    )
+                    ac_map[i, j] = alpha
+                    tied_map[i, j] = diag["tied_fraction"]
                     r2_map[i, j] = regression_calc(X, Y)
 
             done += 1
@@ -191,7 +192,7 @@ def _compute_lag_worker(args):
         flush=True,
     )
 
-    return lag, ac_map, r2_map
+    return lag, ac_map, r2_map, tied_map
 
 
 # ── Função Modal ──────────────────────────────────────────────────────────────
@@ -211,6 +212,7 @@ def process_mov(
     basin_name: str = "brazil",
     use_anomaly: bool = True,
     lags_csv: str = "1-12",
+    binning: str = "ppb",
 ):
     """
     Container Modal: PREDEP granular ponto-a-ponto por bacia.
@@ -301,6 +303,7 @@ def process_mov(
     n_seasons = len(SEASONS)
     ac_arr = np.full((n_seasons, n_lags, n_lat, n_lon), np.nan)
     r2_arr = np.full((n_seasons, n_lags, n_lat, n_lon), np.nan)
+    tied_arr = np.full((n_seasons, n_lags, n_lat, n_lon), np.nan)
 
     mov_bar = None if debug else tqdm(
         total=n_lags * n_seasons,
@@ -336,6 +339,7 @@ def process_mov(
                 n_boot,
                 debug,
                 basin_mask_flat,
+                binning,
             )
             for lag in lags
         ]
@@ -346,11 +350,12 @@ def process_mov(
         t_pool = time.time()
         lag_to_idx = {lag: i for i, lag in enumerate(lags)}
         with mp.Pool(processes=8) as pool:
-            for lag, ac_map, r2_map in pool.imap_unordered(
+            for lag, ac_map, r2_map, tied_map in pool.imap_unordered(
                 _compute_lag_worker, lag_args
             ):
                 ac_arr[s_idx, lag_to_idx[lag]] = ac_map
                 r2_arr[s_idx, lag_to_idx[lag]] = r2_map
+                tied_arr[s_idx, lag_to_idx[lag]] = tied_map
                 if mov_bar is not None:
                     mov_bar.update(1)
 
@@ -372,6 +377,9 @@ def process_mov(
             "r2": (
                 ["season", "lag", "latitude", "longitude"], r2_arr
             ),
+            "tied_fraction": (
+                ["season", "lag", "latitude", "longitude"], tied_arr
+            ),
         },
         coords={
             "season":    SEASONS,
@@ -386,10 +394,24 @@ def process_mov(
         f"PREDEP granular ponto-a-ponto — bacia={basin_name} MoV={mov_name} "
         f"precip_mode={mode_label}"
     )
+    ds_out.attrs["binning"] = binning
+    ds_out.attrs["k_rule"] = (
+        "Ward, k=max(2, round(n/50)) — pontos-por-bin" if binning == "ppb"
+        else "Ward, k=round(sqrt(n)) — regra do Algoritmo 1"
+    )
+    ds_out.attrs["estimator"] = (
+        "forma fechada (U-statistic leave-one-out), deterministica; "
+        "sem bootstrap Monte Carlo, sem seed"
+    )
     ds_out["alpha_core"].attrs["description"] = (
-        "alpha_{precip|MoV} — Bayesian Blocks, dados mensais"
+        f"alpha_{{precip|MoV}} — particao Ward ({binning}), dados mensais"
     )
     ds_out["r2"].attrs["description"] = "r² regressão linear — baseline"
+    ds_out["tied_fraction"].attrs["description"] = (
+        "fração de pares (i≠j) empatados na anomalia de precipitação; "
+        "PREDEP pressupõe Y contínuo, valores altos indicam violação "
+        "(átomo em zero na estação seca) — não filtrado aqui"
+    )
 
     _exp_name = exp_name or f"exp{exp_n:02d}"
     out_dir = Path(f"/data/results/predep_granular_brazil/{_exp_name}/{mov_name}")
@@ -728,11 +750,17 @@ def main(
     exp_name: str = "",
     lag_zero: bool = False,
     lags: str = "1-12",
+    binning: str = "ppb",
 ):
     """
     PREDEP granular ponto-a-ponto no Brasil, por bacia.
 
     Flags:
+      --binning "ppb"           Regra de bins da partição Ward:
+                                  "ppb"  = k=max(2, round(n/50))  [primário]
+                                  "sqrt" = k=round(sqrt(n))       [Algoritmo 1]
+                                Os dois braços usam o mesmo estimador determinístico;
+                                a única diferença é a resolução da partição.
       --movs    "ONI,NIN04"     MoVs separados por vírgula
       --basins  "all"           "all" ou nomes separados por vírgula
                                 ex: "uruguai,paraguai,sao_francisco"
@@ -747,6 +775,9 @@ def main(
       modal run experiments/06_predep_comparisson_brazil_granular.py --movs "ONI,NIN04" --basins "all"
       modal run experiments/06_predep_comparisson_brazil_granular.py --movs "SAM" --basins "all" --lags "0,1,3,6,9,12"
     """
+    if binning not in ("ppb", "sqrt"):
+        raise ValueError(f"binning inválido: {binning!r} — use 'ppb' ou 'sqrt'")
+
     from datetime import datetime
     from pathlib import Path
     import time
@@ -800,7 +831,8 @@ def main(
                 print(f"  {mov_name} — já existe, pulando")
                 continue
             f = process_mov.spawn(
-                mov_name, n_boot, exp_n, _exp_name, debug, "brazil", use_anomaly, lags
+                mov_name, n_boot, exp_n, _exp_name, debug, "brazil",
+                use_anomaly, lags, binning
             )
             futures.append((mov_name, f))
             print(f"  {mov_name} — lançado ✓")
@@ -858,7 +890,8 @@ def main(
                     continue
                 print(f"  [{b_idx}/{len(basin_list)}] bacia: {bname} — calculando lag 0")
                 result = process_mov.remote(
-                    mov_name, n_boot, exp_n, _exp_name, debug, bname, use_anomaly, "0"
+                    mov_name, n_boot, exp_n, _exp_name, debug, bname,
+                    use_anomaly, "0", binning
                 )
                 download_results(mov_name, exp_n, _exp_name)
                 patch_lag0_into_results(mov_name, bname, exp_n)
@@ -870,7 +903,8 @@ def main(
                 continue
             print(f"  [{b_idx}/{len(basin_list)}] bacia: {bname}")
             result = process_mov.remote(
-                mov_name, n_boot, exp_n, _exp_name, debug, bname, use_anomaly, lags
+                mov_name, n_boot, exp_n, _exp_name, debug, bname,
+                use_anomaly, lags, binning
             )
             download_results(mov_name, exp_n, _exp_name)
             all_results.append(result)
