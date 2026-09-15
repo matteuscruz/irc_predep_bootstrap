@@ -110,7 +110,7 @@ python main.py --bacia uruguai --anomalias --assinaturas   # MoVs de cada regime
 | `--bacia` | `all` | bacia, lista separada por vírgula, ou `all` |
 | `--movs` | `all` | MoV, lista separada por vírgula, ou `all` |
 | `--anomalias` | — | remove a climatologia mensal da chuva antes do PREDEP |
-| `--janela` | `predep_janela_1982_2024.nc` | arquivo da janela no volume Modal |
+| `--janela` | — | arquivo da janela no volume Modal |
 | `--lag-min` / `--lag-max` | `0` / `6` | intervalo de lags |
 | `--shifts` | `0,3,5,7,9,11,13` | deslocamentos dos surrogates, em anos (0 = observado) |
 | `--n-regimes` | — | regimes do SOM |
