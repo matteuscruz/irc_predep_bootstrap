@@ -113,8 +113,7 @@ python main.py --bacia uruguai --anomalias --assinaturas   # MoVs de cada regime
 | `--janela` | `predep_janela_1982_2024.nc` | arquivo da janela no volume Modal |
 | `--lag-min` / `--lag-max` | `0` / `6` | intervalo de lags |
 | `--shifts` | `0,3,5,7,9,11,13` | deslocamentos dos surrogates, em anos (0 = observado) |
-| `--n-regimes` | `4` | regimes do SOM |
-| `--tol` | `0.10` | tolerância \|Δα\| da máscara de concordância |
+| `--n-regimes` | — | regimes do SOM |
 | `--seed` | `20260908` | semente |
 | `--juntar` | — | junta as bacias prontas num `brasil.nc` |
 | `--so-figuras` | — | não recalcula, só redesenha as figuras |
