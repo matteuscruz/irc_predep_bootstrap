@@ -43,7 +43,7 @@ RESSALVA_COM_NULO = (
     "comparação é justa. Verde = o observado supera o melhor surrogate; "
     "vermelho = não supera, e aí o número não é evidência.")
 RESSALVA_SEM_NULO = (
-    "Sem calibração nula: este arquivo foi gerado antes dos surrogates. Um "
+    "Sem calibração nula: este arquivo não traz surrogates. Um "
     "consenso alto não é evidência sozinho — no Uruguai o melhor surrogate "
     "chegou a 64%. Recalcule para ter o piso.")
 
@@ -75,11 +75,13 @@ def plot_bacia_predep(fonte, output_dir="plots/bacias", *, tol=0.10, dpi=150,
     com_nulo = _tem_nulo(ds)
     concord = ds["concordancia"].values
     sl, sm = ds["sel_lag"].values, ds["sel_mov"].values
-    if com_nulo:                                # (shift, ...) -> observado
+    # A dimensão `shift` existe sempre que o arquivo vem da pipeline com nulo,
+    # mesmo com um só deslocamento (--shifts 0). Testar só "tem mais de um"
+    # deixava esse caso tratar (1, estação, ...) como (estação, ...).
+    if "shift" in ds.dims:                      # (shift, ...) -> observado
         concord, sl, sm = concord[0], sl[0], sm[0]
-        cons_sur = np.nanmax(ds["consenso"].values[1:], axis=0)   # (estação,)
-    else:
-        cons_sur = None
+    cons_sur = (np.nanmax(ds["consenso"].values[1:], axis=0)   # (estação,)
+                if com_nulo else None)
     bd = load_borders()
 
     li_a, mi_a = _escolha_ano(concord)

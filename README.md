@@ -1,280 +1,137 @@
-# PREDEP / MoV × Precipitação
+# PREDEP / MoV × Precipitação — como executar a pipeline
 
-Análise de dependência preditiva (PREDEP) e regressão entre índices de modos de
-variabilidade (MoV) e precipitação. Os experimentos rodam no Modal (cloud) e são
-disparados localmente via `modal run`.
+A pipeline calcula, para cada bacia hidrográfica, o PREDEP (α) e o r² entre os 29
+índices de modos de variabilidade (MoVs) e a precipitação de duas fontes (Xavier e
+CHIRPS), escolhe o MoV predominante, compara com surrogates, treina o SOM e gera as
+figuras. O ponto de entrada é o `main.py`, e o cálculo roda no **Modal**.
 
-## Instalação
+## 1. Instalação
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt modal
-modal token new   # autenticar no Modal
+pip install -r requirements.txt modal pyshp
+modal token new                  # autentica no Modal
+modal profile activate matteuscruz
 ```
 
-> **Perfil Modal:** os dados do projeto ficam no volume `irc-predep-data` do perfil
-> `matteuscruz`. Se o perfil ativo for outro, use
-> `MODAL_PROFILE=matteuscruz modal run ...` em todos os comandos Modal.
+Use sempre o Python do `.venv`. O despacho para o Modal funciona mesmo se a pilha
+científica local estiver quebrada, mas `--listar`, `--assinaturas` e
+`--executor local` precisam de `xarray` funcionando.
 
-## Dados (não versionados)
+## 2. Dados de entrada (uma vez só)
 
-Os dados não são incluídos no repositório. Estrutura esperada em `data/`:
+O Modal lê dois itens do volume `predep-common-window`:
 
-| Caminho | Descrição |
+| no volume | origem local |
 |---|---|
-| `data/processed/xavier_monthly/pr_monthly_1961_2019_BRAZIL_combined.nc` | Precipitação mensal Xavier (1961–2019, 708 meses) |
-| `data/raw/mov_indices/*_indice*.csv` | Séries mensais de cada MoV |
-| `data/clusters/<bacia>/*.shp` | Shapefiles das 12 bacias hidrográficas |
+| `/predep_janela_1982_2024.nc` | `data/processed/common_window/predep_janela_1982_2024.nc` |
+| `/clusters/<bacia>/` | `data/clusters/<bacia>/` (shapefiles) |
 
-Bacias disponíveis: `amazonica`, `atlantico_leste`, `atlantico_nordeste`,
+Se o volume já tem os dois, pule para a seção 3. Para gerar e enviar do zero:
+
+```bash
+# mensal do CHIRPS a partir do zarr diário (data/raw/chirps_daily/chirps_v2_brazil.zarr)
+python tools/build_monthly_from_raw.py --only chirps
+
+# janela comum Xavier ∩ CHIRPS ∩ 29 MoVs
+python -m src.data_processing.janela_comum --inicio 1982-01 --fim 2024-12
+
+# envio ao Modal
+modal volume create predep-common-window
+modal volume put predep-common-window data/processed/common_window/predep_janela_1982_2024.nc /predep_janela_1982_2024.nc
+modal volume put predep-common-window data/clusters /clusters
+```
+
+## 3. Rodar
+
+```bash
+# uma bacia
+python main.py --bacia uruguai --movs all --anomalias
+
+# várias bacias
+python main.py --bacia parana,uruguai,paraguai --movs all --anomalias
+
+# todas
+python main.py --bacia all --movs all --anomalias
+```
+
+Antes de gastar crédito, confira o que será despachado:
+
+```bash
+python main.py --bacia uruguai --movs all --anomalias --dry-run
+python main.py --listar          # pixels e custo estimado por bacia
+```
+
+Bacias: `amazonica`, `atlantico_leste`, `atlantico_nordeste`,
 `atlantico_nordeste_oriental`, `atlantico_sudeste`, `atlantico_sul`, `paraguai`,
-`parana`, `parnaiba`, `sao_francisco`, `tocantins`, `uruguai`.
+`parana`, `paranaiba`, `sao_francisco`, `tocantins`, `uruguai`.
 
-## Experimentos PREDEP
+Para cada bacia são 196 fatias (4 estações × 7 lags × 7 deslocamentos: o observado
+e 6 surrogates), cada uma no seu container. Fatias já calculadas são puladas, então
+uma corrida interrompida pode ser retomada com o mesmo comando.
 
-### Experimento 06 — PREDEP granular por bacia
+## 4. Saídas
 
-```bash
-modal run experiments/06_predep_comparisson_brazil_granular.py [flags]
-```
+Ao terminar, o `main.py` baixa tudo para o repositório:
 
-| Flag | Padrão | Descrição |
-|---|---|---|
-| `--movs` | `"ONI"` | MoVs separados por vírgula, ou `"all"` |
-| `--basins` | `"all"` | Bacias separadas por vírgula, ou `"all"` |
-| `--exp-n` | `0` | Reusar experimento existente (`0` = cria novo) |
-| `--lags` | `"1-12"` | Lags a calcular. Ex: `"0,1,3,6,9,12"` |
-| `--lag-zero` | `false` | Adiciona lag 0 a resultados existentes |
-| `--n-boot` | `5000` | Amostras bootstrap por pixel |
-| `--no-use-anomaly` | — | Usa precipitação bruta em vez de anomalias |
-| `--test` | `false` | Smoke test: apenas o primeiro MoV e a primeira bacia |
-
-```bash
-# Todos os MoVs, todas as bacias — novo experimento
-modal run experiments/06_predep_comparisson_brazil_granular.py --movs "all" --basins "all"
-
-# Continuar experimento existente (pula combinações já calculadas)
-modal run experiments/06_predep_comparisson_brazil_granular.py --movs "all" --basins "all" --exp-n 21
-
-# Lags selecionados para um MoV específico
-modal run experiments/06_predep_comparisson_brazil_granular.py --movs "SAM" --basins "all" --lags "0,1,3,6,9,12"
-```
-
-Os resultados são salvos em `results/predep_granular_brazil/expN/`.
-
-## Geração de plots (local)
-
-### PNGs por bacia e Brasil completo
-
-```bash
-python src/visualization/generate_plots_exp.py                              # experimento mais recente
-python src/visualization/generate_plots_exp.py --exp-n 21 --movs "ONI,SAM" --lags "1,3,6"
-```
-
-Saída em `results/predep_granular_brazil/expN/plots/{MOV}/`.
-
-### PDFs por bacia
-
-```bash
-python src/visualization/generate_plots_exp.py --exp-n 21 --pdf-basin parana
-```
-
-Gera em `results/predep_granular_brazil/expN/plots/PDF/`:
-- `{bacia}_PREDEP.pdf`, `{bacia}_REGRESSAO.pdf`, `{bacia}_COMPARACAO.pdf`
-
-### Comparação multi-MoV
-
-O notebook `notebooks/best_mov_comparison.ipynb` mostra, por pixel, qual MoV teve o
-maior PREDEP (α) e r² para cada estação e lag.
-
----
-
-## Análise SOM — Self-Organizing Maps
-
-O pipeline SOM agrupa pixels do Brasil por **assinatura de previsibilidade climática**
-usando o MiniSom (vendorizado em `minisom/`). Cada pixel é uma amostra descrita por
-α (PREDEP) de cada MoV × lag × estação. Os neurônios do SOM são clusterizados via
-KMeans nos "regimes" exibidos nos mapas.
-
-### 23 MoVs disponíveis (exp01 — bacia do Paraná)
-
-`AAO`, `AMO`, `AO`, `EPNP`, `IASAS`, `ITSMRG2`, `MEI`, `NAO`,
-`NIN03`, `NIN034`, `NIN04`, `NIN12`, `ONI`, `PDO`, `PNA`, `QBO`,
-`SAODI`, `SASDI`, `SIOD`, `SOI`, `TNA`, `TSA`, `WP`
-
-### Plots estáticos (local, ~40 s)
-
-```bash
-python src/analysis/generate_som_insights.py --exp-n 1
-python src/analysis/generate_som_insights.py --exp-n 1 --movs "ONI,TNA,AAO" --n-regimes 5
-python src/analysis/generate_som_insights.py --exp-n 1 --som-diagnostics   # inclui U-matrix, hitmap
-```
-
-Saída em `plots/exp{NN}/som/` + PDF. Os 7 plots padrão são todos mapas geográficos
-(regime, painéis por regime, component planes, atipicidade, fronteiras, fingerprints, heatmap).
-
-### Exportação para a dashboard
-
-```bash
-python src/analysis/som_to_parquet.py --exp exp01 [flags]
-```
-
-| Flag | Padrão | Descrição |
-|---|---|---|
-| `--exp` | obrigatório | Experimento de origem (ex: `exp01`) |
-| `--feature-mode` | `full` | Modo de features (ver tabela abaixo) |
-| `--n-regimes` | `7` | Número de regimes (clusters KMeans) |
-| `--lags` | `0,1,3,6,9,12` | Lags a usar (vírgula ou `all`) |
-| `--season` | — | Treinar apenas nesta estação: `DJF`, `MAM`, `JJA`, `SON` |
-| `--top-movs` | `0` | Usar top-N MoVs por α médio (`0` = todos) |
-| `--run-id` | igual a `--exp` | ID do diretório de saída (ex: `exp01_DJF`) |
-| `--seasonal-transitions` | — | Adiciona `regime_DJF/MAM/JJA/SON` ao parquet |
-| `--seed` | `42` | Semente do SOM e KMeans |
-| `--combo-k` | `3` | MoVs no rótulo de combinação (`best_mov`) |
-| `--out-dir` | `../predep_visualization/results/predep_som` | Destino |
-
-**Modos de features (`--feature-mode`):**
-
-| Modo | Features | Agrupa por |
-|---|---|---|
-| `full` | α por MoV × lag × estação (~552 dims) | Perfil completo de previsibilidade |
-| `best_mov` | melhor α de cada MoV (23 dims) | Quais MoVs preveem naquela região |
-| `precip_latlon` | lat, lon, precip sazonal Xavier (6 dims) | Clima pluviométrico e localização |
-
-```bash
-# Modo padrão — agrupa por perfil completo
-python src/analysis/som_to_parquet.py --exp exp01
-
-# Modo best_mov — agrupa por combinação de MoVs preditores
-python src/analysis/som_to_parquet.py --exp exp01 --feature-mode best_mov
-
-# Por trimestre: top-4 MoVs, lags 1 e 3 (gera exp01_DJF, exp01_MAM, etc.)
-for SEASON in DJF MAM JJA SON; do
-  python src/analysis/som_to_parquet.py --exp exp01 --season $SEASON \
-    --top-movs 4 --lags 1,3 --run-id exp01_$SEASON
-done
-
-# Lat/lon + precipitação (clusters geográficos coesos)
-python src/analysis/som_to_parquet.py --exp exp01 \
-  --feature-mode precip_latlon --run-id exp01_precip
-
-# Transições sazonais (adiciona regime por estação ao parquet)
-python src/analysis/som_to_parquet.py --exp exp01 \
-  --feature-mode full --seasonal-transitions --run-id exp01_transitions
-```
-
-Saída: `{out-dir}/{run-id}/n{k:02d}/som_pixels.parquet` + `som_meta.json`.
-Para gerar n_regimes 2–10 de uma vez, use o Modal (ver abaixo).
-
-### Rodar SOM no Modal
-
-O wrapper `src/modal/som_insights_modal.py` usa o volume `irc-predep-data`
-(dados já carregados) e escreve os artefatos de volta no volume, depois baixa
-localmente.
-
-**Plots estáticos (PNG + PDF):**
-
-```bash
-MODAL_PROFILE=matteuscruz modal run src/modal/som_insights_modal.py \
-  --exp-n 1 --no-upload
-```
-
-**Parquets para a dashboard (n_regimes 2–10):**
-
-```bash
-MODAL_PROFILE=matteuscruz modal run src/modal/som_insights_modal.py \
-  --exp-n 1 --no-upload --parquets \
-  --feature-mode best_mov \
-  --n-regimes-start 2 --n-regimes-end 10
-```
-
-**Por trimestre meteorológico (top-4 MoVs, lags 1 e 3):**
-
-```bash
-for SEASON in DJF MAM JJA SON; do
-  MODAL_PROFILE=matteuscruz modal run src/modal/som_insights_modal.py \
-    --exp-n 1 --no-upload --parquets \
-    --season $SEASON --top-movs 4 --lags 1,3 \
-    --n-regimes-start 2 --n-regimes-end 10 \
-    --run-id exp01_$SEASON
-done
-```
-
-Parâmetros completos do entrypoint:
-
-| Flag | Padrão | Descrição |
-|---|---|---|
-| `--exp-n` | `1` | Número do experimento |
-| `--parquets` | — | Gera parquets em vez de plots estáticos |
-| `--no-upload` | — | Pula upload dos NCs (dados já no volume) |
-| `--no-download` | — | Pula download local |
-| `--feature-mode` | `best_mov` | Modo de features (parquets) |
-| `--n-regimes-start/end` | `2` / `10` | Range de k para parquets |
-| `--season` | — | Filtrar por estação meteorológica |
-| `--top-movs` | `0` | Top-N MoVs por α médio |
-| `--run-id` | `exp{NN}` | ID do diretório de saída |
-| `--seasonal-transitions` | — | Adicionar regime por estação |
-| `--n-regimes` | `7` | Regimes para plots estáticos |
-| `--diagnostics` | — | Incluir U-matrix, hitmap nos plots |
-
----
-
-## Dashboard interativa
-
-O repositório irmão `predep_visualization/` contém uma dashboard Dash/Plotly
-servida em [predep-visualization.onrender.com](https://predep-visualization.onrender.com).
-
-### Exportar resultados PREDEP para a dashboard
-
-```bash
-# Converte NCs de um experimento para parquet (por MoV × bacia × estação)
-python src/data_processing/export/nc_to_parquet.py --exp exp501
-
-# Experimentos 501–506 (um MoV cada, Brasil completo)
-for N in 501 502 503 504 505 506; do
-  python src/data_processing/export/nc_to_parquet.py --exp exp$N
-done
-```
-
-Saída: `../predep_visualization/results/predep_granular_brazil/exp{NN}/{MoV}/{SEASON}.parquet`.
-
-### Exportar artefatos SOM para a dashboard
-
-```bash
-python src/analysis/som_to_parquet.py --exp exp01 --feature-mode best_mov
-```
-
-Saída: `../predep_visualization/results/predep_som/exp01/n{k:02d}/som_pixels.parquet` + `som_meta.json`.
-
-A dashboard detecta automaticamente todos os diretórios `predep_som/exp*/n*/`
-e os exibe na aba **"SOM (regimes)"** com seletor de n_regimes, modo de visão
-(regimes, atipicidade, fronteiras, component planes) e dropdown de estação
-(quando o parquet contém colunas `regime_DJF/MAM/JJA/SON`).
-
----
-
-## Estrutura do repositório
-
-| Diretório / Arquivo | Conteúdo |
+| arquivo | conteúdo |
 |---|---|
-| `experiments/` | Entrypoints Modal (PREDEP, regressão) |
-| `src/analysis/` | PREDEP, regressão, SOM (`som_insights.py`, `generate_som_insights.py`, `som_to_parquet.py`) |
-| `src/visualization/` | Plots PREDEP, SOM, cluster (`cluster_plots.py`, `som_plots.py`, `generate_plots_exp.py`) |
-| `src/data_processing/export/` | Exporta resultados NC para parquet (`nc_to_parquet.py`, `brasil_nc_to_parquet.py`, `merge_basins_local.py`) |
-| `src/modal/` | Wrappers Modal (`run_experiment.py`, `som_insights_modal.py`) |
-| `notebooks/` | Exploração local e visualização |
-| `minisom/` | MiniSom vendorizado |
-| `data/` | Dados de entrada (não versionados) |
-| `results/` | Saídas dos experimentos (não versionados) |
-| `plots/` | Plots gerados localmente (não versionados) |
-| `tests/` | Testes unitários e Modal |
-| `docs/` | Metodologia |
+| `results/bacias/<janela>/<bacia>.nc` | α, r², escolha por predominância, surrogates e SOM |
+| `plots/bacias/<janela>/<bacia>_predep.png` | α Xavier × CHIRPS, diferença, r², consenso |
+| `plots/bacias/<janela>/<bacia>_som.png` | regimes do SOM e MoVs de cada regime |
 
-## Troubleshooting
+`<janela>` é o nome da janela, com o sufixo `_anom` quando se usa `--anomalias`
+(ex.: `predep_janela_1982_2024_anom`). Corridas com e sem anomalias ficam em pastas
+separadas.
+
+## 5. Juntar as bacias
+
+Depois de calcular as bacias, junte tudo num único arquivo para o Brasil:
 
 ```bash
-modal token current                                    # verificar autenticação
-MODAL_PROFILE=matteuscruz modal volume ls              # listar volumes do perfil correto
-MODAL_PROFILE=matteuscruz modal volume get irc-predep-data /results/predep_granular_brazil ./results/
-python -c "import modal; print(modal.__version__)"    # verificar instalação
+python main.py --juntar --anomalias
+```
+
+Gera `results/bacias/<janela>/brasil.nc`. Use as mesmas opções (`--anomalias`,
+`--janela`) da corrida que gerou as bacias. Bacias que ainda não foram calculadas
+aparecem listadas como ausentes.
+
+## 6. Outros comandos
+
+```bash
+python main.py --bacia uruguai --anomalias --so-figuras    # só redesenha as figuras
+python main.py --bacia uruguai --anomalias --assinaturas   # MoVs de cada regime, em CSV
+```
+
+## Opções do `main.py`
+
+| opção | padrão | descrição |
+|---|---|---|
+| `--bacia` | `all` | bacia, lista separada por vírgula, ou `all` |
+| `--movs` | `all` | MoV, lista separada por vírgula, ou `all` |
+| `--anomalias` | desligado | remove a climatologia mensal da chuva antes do PREDEP |
+| `--janela` | `predep_janela_1982_2024.nc` | arquivo da janela no volume Modal |
+| `--lag-min` / `--lag-max` | `0` / `6` | intervalo de lags |
+| `--shifts` | `0,3,5,7,9,11,13` | deslocamentos dos surrogates, em anos (0 = observado) |
+| `--n-regimes` | `4` | regimes do SOM |
+| `--tol` | `0.10` | tolerância \|Δα\| da máscara de concordância |
+| `--seed` | `20260908` | semente |
+| `--juntar` | — | junta as bacias prontas num `brasil.nc` |
+| `--so-figuras` | — | não recalcula, só redesenha as figuras |
+| `--assinaturas` | — | imprime e salva os MoVs de cada regime |
+| `--sem-baixar` | — | deixa os resultados só no volume Modal |
+| `--dry-run` | — | mostra o que seria feito, sem calcular |
+| `--listar` | — | pixels e custo estimado por bacia |
+| `--executor` | `modal` | `local` só para depuração de uma bacia pequena |
+
+## Problemas comuns
+
+**`Volume 'predep-common-window' not found`** — o perfil Modal ativo não é o que tem
+o volume. Confira com `modal profile current`; se estiver na conta certa e o volume
+não existir, recrie-o conforme a seção 2.
+
+**Baixar manualmente um resultado:**
+
+```bash
+modal volume get predep-common-window /results/predep_janela_1982_2024_anom/bacias/uruguai.nc results/bacias/predep_janela_1982_2024_anom/uruguai.nc
 ```

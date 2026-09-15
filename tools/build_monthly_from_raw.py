@@ -48,9 +48,12 @@ sys.path.insert(0, str(ROOT))
 XAVIER_RAW_DIR = ROOT / "data/raw/xavier_daily"
 CHIRPS_ZARR = ROOT / "data/raw/chirps_daily/chirps_v2_brazil.zarr"
 XAVIER_OUT = ROOT / "data/processed/xavier_monthly/pr_monthly_1961_2024_BRAZIL_XAVIER.nc"
-CHIRPS_OUT = ROOT / "data/processed/chirps_monthly/pr_monthly_1996_2026_BRAZIL_CHIRPS.nc"
+CHIRPS_OUT_DIR = ROOT / "data/processed/chirps_monthly"
 
-CHIRPS_EPOCH = date(1996, 1, 1)   # de time/zarr.json: "days since 1996-01-01"
+# A época do eixo de tempo é LIDA de time/zarr.json, nunca fixada aqui. Ela já
+# mudou uma vez: o store baixado em 2026-09-14 começa em 1981 ("days since
+# 1981-01-01"), o anterior em 1996. Com a época fixa em 1996, o store novo teria
+# todas as datas deslocadas 15 anos para a frente, sem erro nenhum.
 CHIRPS_FILL = -9999.0
 
 ENCODING = {"dtype": "float32", "zlib": True, "complevel": 4, "shuffle": True}
@@ -151,6 +154,23 @@ def build_xavier() -> xr.Dataset:
 # ── CHIRPS ───────────────────────────────────────────────────────────────────
 
 
+def chirps_epoch(store) -> date:
+    """Época do eixo de tempo, a partir de `units` em time/zarr.json."""
+    import re
+    from tools.zarr3_read import meta
+    units = meta(store, "time")["attributes"]["units"]
+    m = re.match(r"days since (\d{4})-(\d{2})-(\d{2})", units)
+    if not m:
+        raise ValueError(f"Unidade de tempo inesperada no CHIRPS: {units!r}")
+    return date(int(m[1]), int(m[2]), int(m[3]))
+
+
+def chirps_out(ds) -> Path:
+    """Nome pelo período de fato coberto — um período novo nunca sobrescreve o antigo."""
+    t = pd.DatetimeIndex(ds.time.values)
+    return CHIRPS_OUT_DIR / f"pr_monthly_{t[0].year}_{t[-1].year}_BRAZIL_CHIRPS.nc"
+
+
 def build_chirps(xavier_lats, xavier_lons) -> xr.Dataset:
     """Soma mensal do CHIRPS diário (zarr v3) + regrid 0.05°→0.1° na grade Xavier.
 
@@ -166,7 +186,10 @@ def build_chirps(xavier_lats, xavier_lons) -> xr.Dataset:
     lat = read_array(store, "latitude").astype("float64")
     lon = read_array(store, "longitude").astype("float64")
     days = read_array(store, "time")
-    times = pd.DatetimeIndex([CHIRPS_EPOCH + timedelta(days=int(d)) for d in days])
+    epoca = chirps_epoch(store)
+    times = pd.DatetimeIndex([epoca + timedelta(days=int(d)) for d in days])
+    if not (np.diff(days) == 1).all():
+        raise ValueError("Eixo de tempo do CHIRPS não é diário e contínuo.")
     print(f"   {CHIRPS_ZARR.name:<44} {times[0]:%Y-%m-%d} → {times[-1]:%Y-%m-%d}  "
           f"({meta(store, 'precip')['shape'][0]} dias)")
 
@@ -274,7 +297,7 @@ def main():
             extra={"regrid_method": "coarsen 2x2 mean (0.05deg -> 0.1deg), "
                                     "snapped to Xavier grid; requires 4/4 sub-pixels"},
         )
-        write(ds, CHIRPS_OUT)
+        write(ds, chirps_out(ds))
 
 
 if __name__ == "__main__":

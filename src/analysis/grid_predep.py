@@ -123,7 +123,7 @@ def calcular_grid(ds, pixels, movs_idx, *, lags=range(7), seasons=SEASONS,
 
     Devolve `(alpha, r2)`, ambos `(fonte, estação, lag, MoV, pixel)`.
 
-    `ds` é o dataset da janela comum (`predep_common_window.nc`); `pixels` são
+    `ds` é o dataset da janela comum (`predep_janela_1982_2024.nc`); `pixels` são
     os índices devolvidos por `bacias.pixels_da_bacia`.
     """
     import pandas as pd
@@ -179,3 +179,84 @@ def escolher_por_predominancia(alpha):
         k = int(np.nanargmax(np.where(np.isfinite(plano), plano, -np.inf)))
         sel_lag[si], sel_mov[si] = divmod(k, n_mov)
     return sel_lag, sel_mov, concord
+
+
+# ── fatia de uma (estação, lag, deslocamento), paralelizada por MoV ───────────
+# É o que o Modal executa em cada container. O laço anterior era de um processo
+# só, embora o container reservasse 8 CPUs: pagava 8 núcleos e usava 1, e com
+# n=129 (janela 1982–2024) as bacias grandes estourariam o timeout — Paraná
+# ~2,1 h e Amazônica ~8,4 h por fatia.
+
+_FATIA: dict = {}
+
+
+def semente(seed, p, si, lag, mi, shift=0):
+    """Semente do Monte Carlo por ponto do grid — IGUAL nas duas fontes.
+
+    Com `shift=0` coincide com a fórmula de `_tarefa` (executor local), então os
+    dois caminhos dão o mesmo α para o observado.
+    """
+    return seed + p + 1000003 * (si + 4 * (lag + 7 * (mi + 29 * shift)))
+
+
+def _init_fatia(pr, mov, meses, estacao, si, lag, seed, shift):
+    try:                                   # uma thread BLAS por processo
+        from threadpoolctl import threadpool_limits
+        threadpool_limits(1)
+    except Exception:
+        pass
+    _FATIA.update(pr=pr, mov=mov, meses=meses, estacao=estacao, si=si,
+                  lag=lag, seed=seed, shift=shift)
+
+
+def _mov_da_fatia(arg):
+    j, mi = arg
+    F = _FATIA
+    pr, mov = F["pr"], F["mov"]
+    n_px = pr.shape[2]
+    alpha = np.full((2, n_px), np.nan, dtype=np.float32)
+    r2 = np.full((2, n_px), np.nan, dtype=np.float32)
+    x, _ = alinhar(mov[:, mi], pr[0], F["meses"], F["estacao"], F["lag"])
+    if len(x) < 10:
+        return j, alpha, r2
+    part = build_partition(x, "ward")
+    for s in range(2):
+        xs, ys = alinhar(mov[:, mi], pr[s], F["meses"], F["estacao"], F["lag"])
+        for p in range(n_px):
+            col = ys[:, p]
+            fin = np.isfinite(col)
+            if fin.sum() < 10:
+                continue
+            sd = semente(F["seed"], p, F["si"], F["lag"], mi, F["shift"])
+            if fin.all():
+                alpha[s, p] = predep_with_partition(part, col, seed=sd)
+            else:
+                alpha[s, p] = predep_with_partition(
+                    build_partition(xs[fin], "ward"), col[fin], seed=sd)
+            r2[s, p] = regression_calc(xs[fin], col[fin])
+    return j, alpha, r2
+
+
+def fatia_alfa_r2(pr, mov, meses, si, lag, movs_idx, seed, shift=0,
+                  n_proc=None, ao_terminar=None):
+    """α e r² de todos os MoVs e pixels de uma (estação, lag, deslocamento).
+
+    `pr` é (fonte, tempo, pixel) e `mov` (tempo, MoV), com o deslocamento já
+    aplicado. Devolve `(alpha, r2)`, ambos (fonte, MoV, pixel). Paraleliza por
+    MoV — a partição depende só de X, então cada MoV é independente — e o
+    resultado é idêntico ao do laço sequencial, porque a semente é por ponto.
+    """
+    from multiprocessing import Pool
+
+    movs_idx = list(movs_idx)
+    n_px = pr.shape[2]
+    alpha = np.full((2, len(movs_idx), n_px), np.nan, dtype=np.float32)
+    r2 = np.full((2, len(movs_idx), n_px), np.nan, dtype=np.float32)
+    args = (pr, mov, meses, SEASONS[si], si, lag, seed, shift)
+    with Pool(processes=n_proc, initializer=_init_fatia, initargs=args) as pool:
+        for k, (j, a, r) in enumerate(
+                pool.imap_unordered(_mov_da_fatia, list(enumerate(movs_idx))), 1):
+            alpha[:, j], r2[:, j] = a, r
+            if ao_terminar:
+                ao_terminar(k, len(movs_idx), movs_idx[j])
+    return alpha, r2

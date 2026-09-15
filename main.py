@@ -47,7 +47,8 @@ sys.path.insert(0, str(ROOT))
 from src.data_processing.bacias import (resolver_bacias,  # noqa: E402
                                         resolver_movs)
 from src.pipeline.config import (APP_MODAL, JANELA_COMUM,  # noqa: E402
-                                 SAIDA_PADRAO, VOLUME_MODAL, estimar_custo)
+                                 JANELA_MODAL_PADRAO, SAIDA_PADRAO,
+                                 VOLUME_MODAL, estimar_custo, tag_janela)
 
 LIMITE_AVISO_H = 2.0          # acima disto, o modo local confirma antes de começar
 
@@ -66,15 +67,16 @@ def baixar(remoto, local):
     return False
 
 
-def baixar_bacias(bacias, com_figuras=True):
-    """Traz o NetCDF e os PNGs de cada bacia do volume para o repo."""
+def baixar_bacias(bacias, tag, com_figuras=True):
+    """Traz o NetCDF e os PNGs de cada bacia do volume para o repo, sob o namespace
+    da janela — para resultados de janelas diferentes não se sobrescreverem."""
     print("\nbaixando os resultados...")
     for b in bacias:
-        baixar(f"/results/bacias/{b}.nc", f"{SAIDA_PADRAO}/{b}.nc")
+        baixar(f"/results/{tag}/bacias/{b}.nc", f"{SAIDA_PADRAO}/{tag}/{b}.nc")
         if com_figuras:
             for suf in ("predep", "som"):
-                baixar(f"/results/figuras/{b}_{suf}.png",
-                       f"plots/bacias/{b}_{suf}.png")
+                baixar(f"/results/{tag}/figuras/{b}_{suf}.png",
+                       f"plots/bacias/{tag}/{b}_{suf}.png")
 
 
 def despachar_modal(args, bacias):
@@ -93,13 +95,22 @@ def despachar_modal(args, bacias):
            "--n-regimes", str(args.n_regimes),
            "--tol", str(args.tol),
            "--iters", str(args.iters),
-           "--seed", str(args.seed)]
+           "--seed", str(args.seed),
+           "--janela", args.janela]
     if args.so_figuras:
         cmd.append("--so-figuras")
+    if args.anomalias:
+        cmd.append("--anomalias")
+    if args.juntar:
+        cmd.append("--juntar")
     print("\n  " + " ".join(cmd) + "\n")
     rc = subprocess.run(cmd, cwd=ROOT).returncode
     if rc == 0 and not args.sem_baixar:
-        baixar_bacias(bacias)
+        tag = tag_janela(args.janela, args.anomalias)
+        if args.juntar:
+            baixar(f"/results/{tag}/brasil.nc", f"{SAIDA_PADRAO}/{tag}/brasil.nc")
+        else:
+            baixar_bacias(bacias, tag)
     return rc
 
 
@@ -119,8 +130,8 @@ def _abrir_janela(caminho):
     if not p.exists():
         raise SystemExit(
             f"dataset da janela comum não encontrado: {p}\n"
-            "Ele é construído por notebooks/exploratory/common_window_dataset.ipynb "
-            "e reúne Xavier + CHIRPS + 29 MoVs em 348 meses.")
+            "Ele é construído por `python -m src.data_processing.janela_comum` "
+            "e reúne Xavier + CHIRPS + 29 MoVs em 516 meses (1982–2024).")
     return xr.open_dataset(p)
 
 
@@ -157,14 +168,16 @@ def assinaturas(args):
     from src.analysis.som_regimes import tabela_assinaturas
 
     for b in resolver_bacias(args.bacia):
-        nc = ROOT / f"{args.out_dir}/{b}.nc"
+        nc = ROOT / f"{args.out_dir}/{tag_janela(args.janela, args.anomalias)}/{b}.nc"
+        if not nc.exists():                    # resultados anteriores ao namespace
+            nc = ROOT / f"{args.out_dir}/{b}.nc"
         if not nc.exists():
             print(f"{b}: {nc} não existe — rode o cálculo primeiro")
             continue
         df = tabela_assinaturas(nc)
         print(f"\n=== {b} ===")
         print(df.to_string(index=False))
-        destino = ROOT / f"{args.out_dir}/{b}_assinaturas.csv"
+        destino = nc.with_name(f"{b}_assinaturas.csv")
         df.to_csv(destino, index=False)
         print(f"\n  ✅ {destino}")
 
@@ -182,6 +195,11 @@ def main():
     ap.add_argument("--shifts", default="0,3,5,7,9,11,13",
                     help="deslocamentos anuais do nulo; 0 = observado. "
                          "Sem eles α e consenso não têm contra o que ser lidos.")
+    ap.add_argument("--janela", default=JANELA_MODAL_PADRAO,
+                    help="arquivo da janela comum no volume Modal "
+                         "(ex.: predep_janela_1982_2024.nc)")
+    ap.add_argument("--anomalias", action="store_true",
+                    help="remove a climatologia mensal da chuva antes do PREDEP")
     ap.add_argument("--n-regimes", type=int, default=4, help="regimes do SOM")
     ap.add_argument("--tol", type=float, default=0.10,
                     help="|Δα| da máscara de concordância")
@@ -206,6 +224,9 @@ def main():
                     help="mostra bacias, pixels e custo estimado, e sai")
     ap.add_argument("--assinaturas", action="store_true",
                     help="imprime quais MoVs distinguem cada regime do SOM, e sai")
+    ap.add_argument("--juntar", action="store_true",
+                    help="não calcula: junta todas as bacias já prontas da janela "
+                         "num brasil.nc e baixa")
     ap.add_argument("--dry-run", action="store_true",
                     help="mostra o que seria feito, sem calcular")
     ap.add_argument("--sim", action="store_true",
@@ -217,6 +238,12 @@ def main():
 
     if args.assinaturas:
         return assinaturas(args)
+
+    if args.juntar and args.executor == "local":
+        from src.pipeline.juntar import juntar
+        pasta = ROOT / args.out_dir / tag_janela(args.janela, args.anomalias)
+        return juntar(sorted(pasta.glob("*.nc")), pasta / "brasil.nc",
+                      resolver_bacias("all"))
 
     # A resolução das bacias não precisa do xarray — é o diretório de
     # shapefiles. Só o modo local abre a janela comum aqui.
@@ -235,7 +262,15 @@ def main():
             print(f"  {b}")
         if args.so_figuras:
             print("\n  modo: só figuras (nada é recalculado)")
-        print(f"\n  saída:  {SAIDA_PADRAO}/<bacia>.nc  ·  plots/bacias/<bacia>_*.png")
+        if args.juntar:
+            print("\n  modo: juntar as bacias prontas num brasil.nc (nada é recalculado)")
+        tag = tag_janela(args.janela, args.anomalias)
+        print(f"\n  janela: {args.janela} · "
+              f"{'anomalias' if args.anomalias else 'totais brutos'}")
+        if args.juntar:
+            print(f"  saída:  {SAIDA_PADRAO}/{tag}/brasil.nc")
+        else:
+            print(f"  saída:  {SAIDA_PADRAO}/{tag}/<bacia>.nc  ·  plots/bacias/{tag}/<bacia>_*.png")
         if args.dry_run:
             print("\n--dry-run: nada foi despachado.")
             return

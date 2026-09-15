@@ -11,10 +11,23 @@ Qualquer coisa que importe numpy vai em outro módulo.
 """
 from __future__ import annotations
 
-JANELA_COMUM = "data/processed/common_window/predep_common_window.nc"
+JANELA_COMUM = "data/processed/common_window/predep_janela_1982_2024.nc"
 SAIDA_PADRAO = "results/bacias"
 APP_MODAL = "src/modal/run_bacias.py"
 VOLUME_MODAL = "predep-common-window"
+# Nome do arquivo da janela DENTRO do volume Modal. Padrão: 1982–2024, o período
+# em que Xavier, CHIRPS e os 29 MoVs coexistem — as duas fontes e as duas métricas
+# (α e r²) usam exatamente os mesmos meses. A janela antiga (1996–2024) continua
+# disponível com --janela predep_common_window.nc.
+JANELA_MODAL_PADRAO = "predep_janela_1982_2024.nc"
+
+
+def tag_janela(janela: str, anomalias: bool) -> str:
+    """Namespace das fatias e resultados. MESMA regra de `_tag` em
+    `src/modal/run_bacias.py`: se as duas divergirem, o download não acha nada."""
+    base = janela.rsplit("/", 1)[-1]
+    base = base[:-3] if base.endswith(".nc") else base
+    return base + ("_anom" if anomalias else "")
 
 # Medido nesta máquina com n=87 e n_boot=⌈n·log n⌉ (389). Serve só para avisar
 # a ordem de grandeza antes de uma corrida local; o Modal não usa isto.
