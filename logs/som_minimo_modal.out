@@ -1,0 +1,14 @@
+[     5s] escolha: DJF TSA/lag12 · MAM NIN03/lag8 · JJA SOI/lag5 · SON NIN03/lag8 · YEAR NIN03/lag8
+[     5s] SOM de consenso — 70,189 pixels, 20 sementes...
+[     7s] Modal: 5 containers (um por estação, 20 sementes cada)
+[  2366s] DJF: estabilidade consenso +0.356 (uma semente +0.123) · ρ entre bases por regime +0.96 +0.95 +0.91 +0.97
+[  2366s] MAM: estabilidade consenso +0.398 (uma semente +0.218) · ρ entre bases por regime +0.94 +0.90 +0.95 +0.91
+[  2366s] JJA: estabilidade consenso +0.583 (uma semente +0.300) · ρ entre bases por regime +0.87 +0.87 +0.79 +0.87
+[  2366s] SON: estabilidade consenso +0.295 (uma semente +0.133) · ρ entre bases por regime +0.88 +0.97 +0.95 +0.83
+[  2366s] YEAR: estabilidade consenso +0.439 (uma semente +0.233) · ρ entre bases por regime +0.92 +0.96 +0.97 +0.94
+[  2366s] ✅ /media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/artifacts/predep_janela_1982_2024_anom_nb10000/som/brasil_consenso_todos_lags_minimo.nc
+[  2366s] ✅ /media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/artifacts/predep_janela_1982_2024_anom_nb10000/som/brasil_consenso_todos_lags_minimo/ (5 arquivos por estação)
+  ✅ /media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/artifacts/predep_janela_1982_2024_anom_nb10000/som/plots/brasil_consenso_todos_lags_minimo.png
+[  2368s] ✅ /media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/artifacts/predep_janela_1982_2024_anom_nb10000/som/plots/brasil_consenso_todos_lags_minimo.png
+  ✅ /media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/artifacts/predep_janela_1982_2024_anom_nb10000/som/plots/brasil_consenso_todos_lags_minimo_intersecao.png
+[  2370s] ✅ /media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/artifacts/predep_janela_1982_2024_anom_nb10000/som/plots/brasil_consenso_todos_lags_minimo_intersecao.png

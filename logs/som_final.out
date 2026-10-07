@@ -1,0 +1,13 @@
+[     5s] escolha: DJF TSA/lag12 · MAM NIN03/lag8 · JJA SOI/lag5 · SON NIN03/lag8 · YEAR NIN03/lag8
+[     5s] SOM de consenso — 70,189 pixels, 20 sementes...
+[ 26256s] DJF: estabilidade consenso +0.402 (uma semente +0.191) · ρ entre bases por regime +0.95 +0.97 +0.98 +0.80
+[ 26256s] MAM: estabilidade consenso +0.302 (uma semente +0.217) · ρ entre bases por regime +0.94 +0.96 +0.90 +0.95
+[ 26256s] JJA: estabilidade consenso +0.342 (uma semente +0.278) · ρ entre bases por regime +0.94 +0.79 +0.70 +0.95
+[ 26256s] SON: estabilidade consenso +0.364 (uma semente +0.134) · ρ entre bases por regime +0.93 +0.97 +0.94 +0.88
+[ 26256s] YEAR: estabilidade consenso +0.594 (uma semente +0.249) · ρ entre bases por regime +0.92 +0.95 +0.90 +0.90
+[ 26256s] ✅ /media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/artifacts/predep_janela_1982_2024_anom_nb10000/som/brasil_consenso_todos_lags.nc
+  ✅ /media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/artifacts/predep_janela_1982_2024_anom_nb10000/som/plots/brasil_consenso_todos_lags.png
+[ 26258s] ✅ /media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/artifacts/predep_janela_1982_2024_anom_nb10000/som/plots/brasil_consenso_todos_lags.png
+[     5s] escolha: DJF IASAS/lag0 · MAM NIN03/lag1 · JJA MGI/lag1 · SON ONI/lag4 · YEAR NIN03/lag1
+[     5s] SOM de consenso — 70,189 pixels, 20 sementes...
+Terminated

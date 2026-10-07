@@ -62,13 +62,45 @@ def padronizar(x, mascara):
     return z[mascara], z
 
 
+def peso_suave(alpha_sel, tau=0.10):
+    """Peso de treino por pixel: exp(-(|Δα|/τ)²). Δ=0 → 1; Δ=τ → 0,37; Δ=2τ → 0,02."""
+    d = np.abs(alpha_sel[1] - alpha_sel[0])
+    return np.where(np.isfinite(d), np.exp(-(d / tau) ** 2), 0.0)
+
+
+def padronizar_ponderado(x, peso, n_amostra=None, seed=0):
+    """(X de treino reamostrado ∝ peso, X de todos) na escala ponderada.
+
+    O MiniSom não aceita pesos por amostra: o treino usa pixels sorteados com
+    reposição, com probabilidade proporcional ao peso. Média e desvio também são
+    ponderados, para treino e projeção ficarem na mesma escala.
+    """
+    x = np.asarray(x, dtype=float)
+    w = np.asarray(peso, dtype=float)
+    fin = np.isfinite(x).all(axis=1) & (w > 0)
+    wf = w[fin] / w[fin].sum()
+    mu = np.average(x[fin], axis=0, weights=wf)
+    sd = np.sqrt(np.average((x[fin] - mu) ** 2, axis=0, weights=wf))
+    sd = np.where(sd == 0, 1.0, sd)
+    z = np.nan_to_num((x - mu) / sd, nan=0.0)
+    n = int(n_amostra or fin.sum())
+    idx = np.random.default_rng(seed).choice(np.where(fin)[0], size=n, replace=True, p=wf)
+    return z[idx], z
+
+
 def treinar_e_projetar(x_mascara, x_todos, n_regimes, seed=42, iters=50):
     """Treina na máscara, atribui em todos. Devolve `(regimes, erro_bmu)`."""
     som, _ = train_som(x_mascara, seed=seed, num_iteration=iters, use_epochs=True)
     res = assign_regimes(som, x_todos, n_regimes=n_regimes, seed=seed)
     pesos = som.get_weights().reshape(-1, x_todos.shape[1])
-    d = np.linalg.norm(x_todos[:, None, :] - pesos[None, :, :], axis=2)
-    return res.pixel_regime, d.min(axis=1)
+    # Em blocos: a matriz (pixel × neurônio × atributo) inteira passa de 14 GB no
+    # Brasil todo (70 mil pixels × 900 neurônios × 29 atributos, float64).
+    erro = np.empty(len(x_todos), dtype=np.float32)
+    for i in range(0, len(x_todos), 2000):
+        bloco = x_todos[i:i + 2000]
+        erro[i:i + 2000] = np.linalg.norm(bloco[:, None, :] - pesos[None, :, :],
+                                          axis=2).min(axis=1)
+    return res.pixel_regime, erro
 
 
 def alinhar_rotulos(referencia, outro, n_regimes):
@@ -105,7 +137,7 @@ def assinatura(alpha_nativo, rotulos, n_regimes):
 
 
 def regimes_por_estacao(features, alpha_sel, *, n_regimes=4, tol=0.10,
-                        seeds=None, iters=50, progresso=True):
+                        seeds=None, iters=50, progresso=True, suave=False, tau=0.10):
     """Roda o SOM de todas as estações e das duas fontes.
 
     `features` é `(fonte, estação, MoV, pixel)` — o α de cada MoV no lag
@@ -126,6 +158,7 @@ def regimes_por_estacao(features, alpha_sel, *, n_regimes=4, tol=0.10,
     masc = np.zeros((n_se, n_px), dtype=bool)
     teto = np.full((n_se, max(1, len(seeds) - 1)), np.nan, dtype=np.float32)
     ari = np.full(n_se, np.nan, dtype=np.float32)
+    ari_todos = np.full(n_se, np.nan, dtype=np.float32)
 
     for si in range(n_se):
         m = mascara_concordancia(alpha_sel[:, si], tol)
@@ -136,7 +169,13 @@ def regimes_por_estacao(features, alpha_sel, *, n_regimes=4, tol=0.10,
             continue
         rotulos_ref = None
         for s in range(n_src):
-            xm, xa = padronizar(features[s, si].T, m)
+            if suave:
+                # máscara suave: todos os pixels treinam, com peso pela concordância;
+                # `m` (a máscara dura) só entra no ARI, para comparar com o dura
+                w = peso_suave(alpha_sel[:, si], tau)
+                xm, xa = padronizar_ponderado(features[s, si].T, w, seed=si)
+            else:
+                xm, xa = padronizar(features[s, si].T, m)
             if s == 0:
                 variantes = [treinar_e_projetar(xm, xa, n_regimes, sd, iters)
                              for sd in seeds]
@@ -149,14 +188,17 @@ def regimes_por_estacao(features, alpha_sel, *, n_regimes=4, tol=0.10,
                                                           seeds[0], iters)
                 rotulos = alinhar_rotulos(rotulos_ref, rotulos, n_regimes)
                 ari[si] = adjusted_rand_score(rotulos_ref[m], rotulos[m])
+                ari_todos[si] = adjusted_rand_score(rotulos_ref, rotulos)
             reg[s, si] = rotulos
             assin[s, si] = assinatura(features[s, si].T, rotulos, n_regimes)
         if progresso:
             print(f"      estação {si}: {m.sum():,} px na máscara · "
-                  f"ARI {ari[si]:+.3f} · teto {np.nanmean(teto[si]):+.3f}", flush=True)
+                  f"ARI {ari[si]:+.3f} (todos os px {ari_todos[si]:+.3f}) · "
+                  f"teto {np.nanmean(teto[si]):+.3f}", flush=True)
 
     return {"regime": reg, "erro_bmu": qerr, "assinatura": assin,
-            "mascara": masc, "ari_fontes": ari, "ari_teto": teto}
+            "mascara": masc, "ari_fontes": ari, "ari_teto": teto,
+            "ari_todos": ari_todos}
 
 
 def tabela_assinaturas(fonte, fonte_idx=0, top=3):

@@ -33,6 +33,7 @@ Subcomandos úteis antes de rodar:
     python main.py --bacia X --dry-run  # o que seria feito, sem calcular
 """
 import argparse
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -48,35 +49,75 @@ from src.data_processing.bacias import (resolver_bacias,  # noqa: E402
                                         resolver_movs)
 from src.pipeline.config import (APP_MODAL, JANELA_COMUM,  # noqa: E402
                                  JANELA_MODAL_PADRAO, SAIDA_PADRAO,
-                                 VOLUME_MODAL, estimar_custo, tag_janela)
+                                 VOLUME_MODAL, estimar_custo, fator_nboot, tag_janela)
 
 LIMITE_AVISO_H = 2.0          # acima disto, o modo local confirma antes de começar
 
 
 def baixar(remoto, local):
-    """`modal volume get`, que recusa sobrescrever — por isso apaga antes."""
+    """`modal volume get` para um arquivo temporário, que só substitui o local no fim.
+
+    A versão anterior apagava o arquivo local ANTES de baixar: se a conta estivesse
+    desativada ou o arquivo não existisse no volume, a cópia boa se perdia.
+    """
     destino = ROOT / local
     destino.parent.mkdir(parents=True, exist_ok=True)
-    destino.unlink(missing_ok=True)
+    parcial = destino.with_name(destino.name + ".parcial")
+    parcial.unlink(missing_ok=True)            # `volume get` recusa sobrescrever
     r = subprocess.run(["modal", "volume", "get", VOLUME_MODAL, remoto,
-                        str(destino)], cwd=ROOT, capture_output=True, text=True)
-    if r.returncode == 0:
+                        str(parcial)], cwd=ROOT, capture_output=True, text=True)
+    if r.returncode == 0 and parcial.exists() and parcial.stat().st_size > 0:
+        os.replace(parcial, destino)
         print(f"  ✅ {local}")
         return True
-    print(f"  ⚠ {remoto}: {r.stderr.strip().splitlines()[-1] if r.stderr else 'falhou'}")
+    parcial.unlink(missing_ok=True)
+    # O Modal desenha o erro numa caixa; a linha útil é a que tem texto além da moldura.
+    linhas = [ln.strip("│╭╮╰╯─ ").strip() for ln in (r.stderr or "").splitlines()]
+    linhas = [ln for ln in linhas if ln and ln.lower() != "error"]
+    motivo = linhas[-1] if linhas else "arquivo vazio"
+    print(f"  ⚠ {remoto}: {motivo}"
+          + (" — a cópia local anterior foi mantida" if destino.exists() else ""))
     return False
 
 
+ARTEFATOS = "artifacts"
+
+
+def artefato(tag, *partes):
+    """Caminho local de um artefato: `artifacts/<config>/<partes...>`.
+
+    `<config>` é o namespace da corrida (janela, anomalias, n_boot): resultados de
+    configurações diferentes nunca se sobrescrevem. Dentro dele:
+
+        raw/basins/<bacia>.nc                 α, r², escolha, nulo e SOM da bacia
+        plots/basins/predep/<bacia>.png       figura do PREDEP
+        plots/basins/regression/<bacia>.png   figura da regressão (r²)
+        som/<mapeamento>.nc                   mapeamento espacial de um SOM
+        som/plots/basins/<bacia>.png          SOM treinado na própria bacia
+    """
+    return "/".join([ARTEFATOS, tag, *partes])
+
+
 def baixar_bacias(bacias, tag, com_figuras=True):
-    """Traz o NetCDF e os PNGs de cada bacia do volume para o repo, sob o namespace
-    da janela — para resultados de janelas diferentes não se sobrescreverem."""
+    """Traz de cada bacia o NetCDF, as figuras e o SOM para `artifacts/<config>/`."""
     print("\nbaixando os resultados...")
     for b in bacias:
-        baixar(f"/results/{tag}/bacias/{b}.nc", f"{SAIDA_PADRAO}/{tag}/{b}.nc")
+        baixar(f"/results/{tag}/bacias/{b}.nc", artefato(tag, "raw", "basins", f"{b}.nc"))
+        baixar(f"/results/{tag}/som_bacias/{b}.nc", artefato(tag, "som", f"{b}.nc"))
         if com_figuras:
-            for suf in ("predep", "som"):
-                baixar(f"/results/{tag}/figuras/{b}_{suf}.png",
-                       f"plots/bacias/{tag}/{b}_{suf}.png")
+            baixar(f"/results/{tag}/figuras/{b}_predep.png",
+                   artefato(tag, "plots", "basins", "predep", f"{b}.png"))
+            baixar(f"/results/{tag}/figuras/{b}_regressao.png",
+                   artefato(tag, "plots", "basins", "regression", f"{b}.png"))
+            baixar(f"/results/{tag}/figuras/{b}_som.png",
+                   artefato(tag, "som", "plots", "basins", f"{b}.png"))
+
+
+def nome_unidade(regiao, bacias):
+    """Nome da saída de --som/--regiao. MESMA regra do entrypoint em run_bacias.py."""
+    if regiao:
+        return regiao
+    return "brasil" if sorted(bacias) == sorted(resolver_bacias("all")) else "_".join(bacias)
 
 
 def despachar_modal(args, bacias):
@@ -96,22 +137,74 @@ def despachar_modal(args, bacias):
            "--tol", str(args.tol),
            "--iters", str(args.iters),
            "--seed", str(args.seed),
-           "--janela", args.janela]
+           "--janela", args.janela,
+           "--n-boot", str(args.n_boot)]
     if args.so_figuras:
         cmd.append("--so-figuras")
     if args.anomalias:
         cmd.append("--anomalias")
     if args.juntar:
         cmd.append("--juntar")
+    if args.regiao:
+        cmd += ["--regiao", args.regiao]
+    if args.som:
+        cmd.append("--som")
+        cmd += ["--metrica", args.metrica]
+    if args.busca_som:
+        cmd.append("--busca-som")
+    if args.busca_par_fixo:
+        cmd.append("--busca-par-fixo")
+    if args.busca_todos:
+        cmd.append("--busca-todos")
+    if args.usar_fatias_existentes:
+        cmd.append("--usar-fatias-existentes")
     print("\n  " + " ".join(cmd) + "\n")
-    rc = subprocess.run(cmd, cwd=ROOT).returncode
-    if rc == 0 and not args.sem_baixar:
-        tag = tag_janela(args.janela, args.anomalias)
-        if args.juntar:
-            baixar(f"/results/{tag}/brasil.nc", f"{SAIDA_PADRAO}/{tag}/brasil.nc")
-        else:
-            baixar_bacias(bacias, tag)
+    rc = 1
+    try:
+        rc = subprocess.run(cmd, cwd=ROOT).returncode
+    finally:
+        # SEMPRE baixa, mesmo se a corrida falhar ou for interrompida: o que ficou
+        # pronto no volume antes da falha (a conta cair, o timeout de uma figura)
+        # vem para o repositório. `baixar` não apaga a cópia local se falhar.
+        if not args.sem_baixar:
+            if rc != 0:
+                print(f"\n  ⚠ a corrida não terminou (código {rc}); baixando o que "
+                      "ficou pronto no volume")
+            baixar_resultados(args, bacias)
     return rc
+
+
+def baixar_resultados(args, bacias):
+    """Traz para o repositório o que a corrida produz, conforme o modo."""
+    tag = tag_janela(args.janela, args.anomalias, args.n_boot)
+    if args.juntar:
+        baixar(f"/results/{tag}/brasil.nc", artefato(tag, "raw", "basins", "brasil.nc"))
+    elif args.busca_som:
+        # MESMO nome do entrypoint em run_bacias.py
+        nome = "brasil_par_fixo" if args.busca_par_fixo else "brasil"
+        baixar(f"/results/{tag}/som_busca/{nome}.nc",
+               artefato(tag, "som", "busca", f"{nome}.nc"))
+        baixar(f"/results/{tag}/figuras_som_busca/{nome}_som_busca.png",
+               artefato(tag, "som", "plots", "busca", f"{nome}.png"))
+    elif args.som:
+        nome = nome_unidade(args.regiao, bacias)
+        if args.metrica != "alpha":          # MESMO nome de som_regiao
+            nome = f"{nome}_{args.metrica}"
+        baixar(f"/results/{tag}/som/{nome}.nc", artefato(tag, "som", f"{nome}.nc"))
+        baixar(f"/results/{tag}/figuras_som/{nome}_som.png",
+               artefato(tag, "som", "plots", f"{nome}.png"))
+    elif args.regiao:
+        r = args.regiao
+        baixar(f"/results/{tag}/regioes/{r}.nc", artefato(tag, "raw", "regions", f"{r}.nc"))
+        baixar(f"/results/{tag}/som_regioes/{r}.nc", artefato(tag, "som", f"{r}.nc"))
+        baixar(f"/results/{tag}/figuras_regioes/{r}_predep.png",
+               artefato(tag, "plots", "regions", "predep", f"{r}.png"))
+        baixar(f"/results/{tag}/figuras_regioes/{r}_regressao.png",
+               artefato(tag, "plots", "regions", "regression", f"{r}.png"))
+        baixar(f"/results/{tag}/figuras_regioes/{r}_som.png",
+               artefato(tag, "som", "plots", "regions", f"{r}.png"))
+    else:
+        baixar_bacias(bacias, tag)
 
 
 def _abrir_janela(caminho):
@@ -143,24 +236,27 @@ def listar(args):
     movs = [str(m) for m in ds.mov_name.values]
     n_mov = len(resolver_movs(args.movs, movs))
     n_lag = len(range(args.lag_min, args.lag_max + 1))
+    n_sh = len([x for x in args.shifts.split(",") if x.strip() != ""])
     print(f"janela comum: {ds.sizes['time']} meses · {len(lat):,} pixels · "
           f"{len(movs)} MoVs")
-    print(f"pedido: {n_mov} MoVs × {n_lag} lags × 4 estações × 2 fontes\n")
-    print(f"{'bacia':<30}{'pixels':>9}{'custo estimado':>18}")
-    print("-" * 57)
+    print(f"pedido: {n_mov} MoVs × {n_lag} lags × 4 estações × 2 fontes × "
+          f"{n_sh} deslocamentos · n_boot {args.n_boot or 'padrão'} "
+          f"(custo ×{fator_nboot(args.n_boot):.1f})\n")
+    print(f"{'bacia':<30}{'pixels':>9}{'núcleo-hora':>14}")
+    print("-" * 53)
     linhas = [(b, len(pixels_da_bacia(b, lat, lon)))
-              for b in resolver_bacias("all")]
+              for b in resolver_bacias(args.bacia)]
     linhas.sort(key=lambda t: t[1])
-    total_px = total_s = 0
+    total_px = total_h = 0
     for b, n in linhas:
-        s = estimar_custo(n, n_mov, n_lag, n_proc=args.n_proc or 8)
+        h = estimar_custo(n, n_mov, n_lag, n_proc=1, n_boot=args.n_boot) * n_sh / 3600
         total_px += n
-        total_s += s
-        print(f"{b:<30}{n:>9,}{s/60:>15.0f} min")
-    print("-" * 57)
-    print(f"{'TOTAL':<30}{total_px:>9,}{total_s/3600:>15.1f} h")
-    print(f"\n(estimativa com {args.n_proc or 8} núcleos; medido em 13,4 ms por "
-          "chamada de predep)")
+        total_h += h
+        print(f"{b:<30}{n:>9,}{h:>14,.0f}")
+    print("-" * 53)
+    print(f"{'TOTAL':<30}{total_px:>9,}{total_h:>14,.0f}")
+    print("\n(núcleo-hora de cálculo das fatias, a partir de 13,4 ms por chamada de "
+          "predep medidos localmente; o Modal cobra também memória e tempo ocioso)")
 
 
 def assinaturas(args):
@@ -168,7 +264,7 @@ def assinaturas(args):
     from src.analysis.som_regimes import tabela_assinaturas
 
     for b in resolver_bacias(args.bacia):
-        nc = ROOT / f"{args.out_dir}/{tag_janela(args.janela, args.anomalias)}/{b}.nc"
+        nc = ROOT / f"{args.out_dir}/{tag_janela(args.janela, args.anomalias, args.n_boot)}/{b}.nc"
         if not nc.exists():                    # resultados anteriores ao namespace
             nc = ROOT / f"{args.out_dir}/{b}.nc"
         if not nc.exists():
@@ -204,6 +300,10 @@ def main():
     ap.add_argument("--tol", type=float, default=0.10,
                     help="|Δα| da máscara de concordância")
     ap.add_argument("--seed", type=int, default=20260908)
+    ap.add_argument("--n-boot", type=int, default=0,
+                    help="reamostragens por estimativa de α; 0 = ⌈n ln n⌉ do "
+                         "Algoritmo 1 (627 com n=129). Outro valor vai para um "
+                         "namespace próprio (sufixo _nb<valor>), sem misturar fatias")
     ap.add_argument("--iters", type=int, default=50, help="épocas do SOM")
     ap.add_argument("--executor", choices=["modal", "local"], default="modal",
                     help="onde calcular (padrão: modal)")
@@ -227,6 +327,34 @@ def main():
     ap.add_argument("--juntar", action="store_true",
                     help="não calcula: junta todas as bacias já prontas da janela "
                          "num brasil.nc e baixa")
+    ap.add_argument("--regiao", default="",
+                    help="nome da região (ex.: sul_sudeste, brasil): trata as bacias de "
+                         "--bacia como uma unidade só e refaz escolha, surrogates e SOM "
+                         "a partir das fatias, sem recalcular PREDEP")
+    ap.add_argument("--som", action="store_true",
+                    help="só calcula o SOM das bacias de --bacia a partir dos <bacia>.nc "
+                         "já prontos (sem fatias, PREDEP ou surrogates); nome da saída "
+                         "= --regiao, ou 'brasil' para todas, ou as bacias unidas por _")
+    ap.add_argument("--metrica", choices=["alpha", "r2"], default="alpha",
+                    help="com --som: agrupa pelo PREDEP (alpha) ou pela regressão (r2); "
+                         "a máscara usa a mesma tolerância relativa nas duas")
+    ap.add_argument("--busca-som", action="store_true",
+                    help="busca o SOM mais concordante entre Xavier e CHIRPS (grade × K) "
+                         "sobre o BRASIL INTEIRO numa passada, e roda a MESMA busca em "
+                         "cada surrogate; exige as 12 bacias prontas")
+    ap.add_argument("--busca-par-fixo", action="store_true",
+                    help="com --busca-som: os surrogates usam o par (lag, MoV) do "
+                         "observado em vez de refazer a escolha — 288 fatias em vez "
+                         "de 2.016, mas o nulo deixa de incluir a seleção do par")
+    ap.add_argument("--busca-todos", action="store_true",
+                    help="com --busca-som: roda os 6 surrogates em todas as estações. "
+                         "Sem isto, cada estação para no 1º surrogate que empatar ou "
+                         "superar o observado — o veredito é o mesmo, com menos custo")
+    ap.add_argument("--usar-fatias-existentes", action="store_true",
+                    help="não calcula fatias: monta cada bacia só com as que já estão "
+                         "no volume. Combinações (estação, lag) com alguma fatia "
+                         "ausente saem da escolha de TODAS as séries, observado "
+                         "inclusive, para o teste contra o nulo continuar justo")
     ap.add_argument("--dry-run", action="store_true",
                     help="mostra o que seria feito, sem calcular")
     ap.add_argument("--sim", action="store_true",
@@ -239,9 +367,27 @@ def main():
     if args.assinaturas:
         return assinaturas(args)
 
+    if (args.regiao or args.som) and args.juntar:
+        raise SystemExit("--juntar não combina com --regiao nem com --som")
+    if (args.regiao or args.som) and args.executor != "modal":
+        raise SystemExit("--regiao e --som só rodam no Modal")
+    if args.som and args.so_figuras:
+        raise SystemExit("--som já gera a figura do SOM; não use com --so-figuras")
+    if args.busca_som and (args.som or args.regiao or args.juntar or args.so_figuras):
+        raise SystemExit("--busca-som não combina com --som, --regiao, --juntar "
+                         "nem --so-figuras")
+    if args.busca_som and args.executor != "modal":
+        raise SystemExit("--busca-som só roda no Modal")
+    if args.metrica != "alpha" and not args.som:
+        raise SystemExit("--metrica só tem efeito com --som")
+    if (args.busca_par_fixo or args.busca_todos) and not args.busca_som:
+        raise SystemExit("--busca-par-fixo e --busca-todos só têm efeito com --busca-som")
+    if args.busca_som and sorted(resolver_bacias(args.bacia)) != sorted(resolver_bacias("all")):
+        raise SystemExit("--busca-som roda sempre sobre o Brasil inteiro: use --bacia all")
+
     if args.juntar and args.executor == "local":
         from src.pipeline.juntar import juntar
-        pasta = ROOT / args.out_dir / tag_janela(args.janela, args.anomalias)
+        pasta = ROOT / args.out_dir / tag_janela(args.janela, args.anomalias, args.n_boot)
         return juntar(sorted(pasta.glob("*.nc")), pasta / "brasil.nc",
                       resolver_bacias("all"))
 
@@ -262,15 +408,54 @@ def main():
             print(f"  {b}")
         if args.so_figuras:
             print("\n  modo: só figuras (nada é recalculado)")
+        if args.usar_fatias_existentes:
+            print("\n  modo: monta só com as fatias já calculadas; combinações "
+                  "incompletas saem da escolha de todas as séries")
         if args.juntar:
             print("\n  modo: juntar as bacias prontas num brasil.nc (nada é recalculado)")
-        tag = tag_janela(args.janela, args.anomalias)
+        if args.busca_som:
+            n_sur = len([x for x in args.shifts.split(",") if x.strip() not in ("", "0")])
+            n_fat = len(bacias) * 4 * n_sur * (1 if args.busca_par_fixo else len(lags))
+            print("\n  modo: busca do SOM concordante (grade × K) sobre o Brasil inteiro, "
+                  "no observado e nos surrogates")
+            print("  nulo: " + ("surrogates com o par do observado" if args.busca_par_fixo
+                                else "cada surrogate refaz a escolha do par sobre o Brasil"))
+            print(f"  custo: até {n_fat:,} fatias de surrogate (as já existentes no volume "
+                  f"são puladas) + 12 SOMs em cada uma das até {4 * (n_sur + 1)} "
+                  "combinações estação × deslocamento")
+            print("  parada antecipada: " + ("desligada (--busca-todos)" if args.busca_todos
+                  else "cada estação para no 1º surrogate que empatar ou superar o "
+                       "observado"))
+        if args.som:
+            print(f"\n  modo: só o SOM de '{nome_unidade(args.regiao, bacias)}' a partir "
+                  "das bacias já calculadas (sem fatias, PREDEP ou surrogates)")
+        elif args.regiao:
+            print(f"\n  modo: região '{args.regiao}' — escolha, surrogates e SOM sobre a "
+                  "união das bacias (PREDEP não é recalculado)")
+        tag = tag_janela(args.janela, args.anomalias, args.n_boot)
         print(f"\n  janela: {args.janela} · "
               f"{'anomalias' if args.anomalias else 'totais brutos'}")
         if args.juntar:
-            print(f"  saída:  {SAIDA_PADRAO}/{tag}/brasil.nc")
+            print(f"  saída:  {artefato(tag, 'raw', 'basins', 'brasil.nc')}")
+        elif args.busca_som:
+            nome = "brasil_par_fixo" if args.busca_par_fixo else "brasil"
+            print(f"  saída:  {artefato(tag, 'som', 'busca', nome + '.nc')}  ·  "
+                  f"{artefato(tag, 'som', 'plots', 'busca', nome + '.png')}")
+        elif args.som:
+            nome = nome_unidade(args.regiao, bacias)
+            if args.metrica != "alpha":
+                nome = f"{nome}_{args.metrica}"
+            print(f"  métrica do SOM: {args.metrica}")
+            print(f"  saída:  {artefato(tag, 'som', nome + '.nc')}  ·  "
+                  f"{artefato(tag, 'som', 'plots', nome + '.png')}")
+        elif args.regiao:
+            print(f"  saída:  {artefato(tag, 'raw', 'regions', args.regiao + '.nc')}  ·  "
+                  f"{artefato(tag, 'plots', 'regions')}/{{predep,regression}}/"
+                  f"{args.regiao}.png")
         else:
-            print(f"  saída:  {SAIDA_PADRAO}/{tag}/<bacia>.nc  ·  plots/bacias/{tag}/<bacia>_*.png")
+            print(f"  saída:  {artefato(tag)}/")
+            print("            raw/basins/<bacia>.nc · plots/basins/{predep,regression}/"
+                  "<bacia>.png · som/<bacia>.nc · som/plots/basins/<bacia>.png")
         if args.dry_run:
             print("\n--dry-run: nada foi despachado.")
             return

@@ -199,14 +199,14 @@ def semente(seed, p, si, lag, mi, shift=0):
     return seed + p + 1000003 * (si + 4 * (lag + 7 * (mi + 29 * shift)))
 
 
-def _init_fatia(pr, mov, meses, estacao, si, lag, seed, shift):
+def _init_fatia(pr, mov, meses, estacao, si, lag, seed, shift, n_boot=None):
     try:                                   # uma thread BLAS por processo
         from threadpoolctl import threadpool_limits
         threadpool_limits(1)
     except Exception:
         pass
     _FATIA.update(pr=pr, mov=mov, meses=meses, estacao=estacao, si=si,
-                  lag=lag, seed=seed, shift=shift)
+                  lag=lag, seed=seed, shift=shift, n_boot=n_boot)
 
 
 def _mov_da_fatia(arg):
@@ -228,17 +228,18 @@ def _mov_da_fatia(arg):
             if fin.sum() < 10:
                 continue
             sd = semente(F["seed"], p, F["si"], F["lag"], mi, F["shift"])
+            nb = F.get("n_boot")
             if fin.all():
-                alpha[s, p] = predep_with_partition(part, col, seed=sd)
+                alpha[s, p] = predep_with_partition(part, col, seed=sd, n_boot=nb)
             else:
                 alpha[s, p] = predep_with_partition(
-                    build_partition(xs[fin], "ward"), col[fin], seed=sd)
+                    build_partition(xs[fin], "ward"), col[fin], seed=sd, n_boot=nb)
             r2[s, p] = regression_calc(xs[fin], col[fin])
     return j, alpha, r2
 
 
 def fatia_alfa_r2(pr, mov, meses, si, lag, movs_idx, seed, shift=0,
-                  n_proc=None, ao_terminar=None):
+                  n_proc=None, ao_terminar=None, n_boot=None):
     """α e r² de todos os MoVs e pixels de uma (estação, lag, deslocamento).
 
     `pr` é (fonte, tempo, pixel) e `mov` (tempo, MoV), com o deslocamento já
@@ -252,7 +253,8 @@ def fatia_alfa_r2(pr, mov, meses, si, lag, movs_idx, seed, shift=0,
     n_px = pr.shape[2]
     alpha = np.full((2, len(movs_idx), n_px), np.nan, dtype=np.float32)
     r2 = np.full((2, len(movs_idx), n_px), np.nan, dtype=np.float32)
-    args = (pr, mov, meses, SEASONS[si], si, lag, seed, shift)
+    # n_boot=None mantém o ⌈n ln n⌉ do Algoritmo 1 — o padrão da pipeline.
+    args = (pr, mov, meses, SEASONS[si], si, lag, seed, shift, n_boot)
     with Pool(processes=n_proc, initializer=_init_fatia, initargs=args) as pool:
         for k, (j, a, r) in enumerate(
                 pool.imap_unordered(_mov_da_fatia, list(enumerate(movs_idx))), 1):

@@ -1,0 +1,65 @@
+[     4s] escolha: DJF IASAS/lag0 · MAM NIN03/lag1 · JJA MGI/lag1 · SON ONI/lag4 · YEAR NIN03/lag1
+[     4s] SOM de consenso — 70,189 pixels, 20 sementes...
+[     6s] Modal: 100 containers (5 estações × 20 sementes)
+Traceback (most recent call last):
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/tools/som_consenso_local.py", line 205, in <module>
+    main()
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/tools/som_consenso_local.py", line 163, in main
+    r = som_consenso_modal(features, alpha_sel, a.n_regimes, a.iters, sementes, log)
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/tools/som_consenso_local.py", line 97, in som_consenso_modal
+    saidas = list(treinar_semente.starmap(tarefas))
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/_utils/async_utils.py", line 839, in __iter__
+    yield from run_async_gen(runner, self._async_iterable)
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/_utils/async_utils.py", line 917, in run_async_gen
+    next_yield = runner.run(gen.asend(next_send))  # type: ignore[arg-type]
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/synchronicity/async_utils.py", line 82, in run
+    return self._loop.run_until_complete(wrapper_coro())
+  File "/usr/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/synchronicity/async_utils.py", line 48, in wrapper_coro
+    return await coro_task
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/_utils/async_utils.py", line 749, in asend
+    return await self.gen.asend(value)
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/parallel_map.py", line 1057, in _starmap_async
+    async for output in _map_helper(
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/parallel_map.py", line 1009, in _map_helper
+    async for output in map_output_stream:
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/_utils/async_utils.py", line 1091, in async_merge
+    raise item.value
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/_utils/async_utils.py", line 1070, in producer
+    async for item in stream:
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/synchronicity/synchronizer.py", line 633, in _run_generator_async
+    raise uc_exc.exc
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/_object.py", line 55, in wrapped
+    async for item in stream:
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/_functions.py", line 1650, in _map
+    async for item in stream:
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/parallel_map.py", line 965, in _map_invocation_inputplane
+    async for maybe_output in merged:
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/_utils/async_utils.py", line 1091, in async_merge
+    raise item.value
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/_utils/async_utils.py", line 1070, in producer
+    async for item in stream:
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/parallel_map.py", line 921, in poll_outputs
+    async for idx, output in streamer:
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/_utils/async_utils.py", line 1220, in async_map_ordered
+    async for output_idx, output_item in stream:
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/_utils/async_utils.py", line 1196, in async_map
+    async for item in stream:
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/_utils/async_utils.py", line 1091, in async_merge
+    raise item.value
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/_utils/async_utils.py", line 1070, in producer
+    async for item in stream:
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/_utils/async_utils.py", line 1185, in worker
+    res = await prevent_cancellation_abortion(async_mapper_func(item.value))
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/_utils/async_utils.py", line 1150, in prevent_cancellation_abortion
+    return await asyncio.shield(t)
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/_utils/async_utils.py", line 1209, in mapper_func_wrapper
+    return (tup[0], await async_mapper_func(tup[1]))
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/parallel_map.py", line 910, in fetch_output
+    raise e
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/parallel_map.py", line 905, in fetch_output
+    output = await _process_result(item.result, item.data_format, input_plane_stub, client)
+  File "/media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/.venv/lib/python3.10/site-packages/modal/_utils/function_utils.py", line 550, in _process_result
+    raise RemoteError(result.exception)
+modal.exception.RemoteError

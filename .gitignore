@@ -44,6 +44,7 @@ references/
 # Data
 data/raw/
 data/processed/
+data/fatias_modal/
 !data/raw/mov_indices/*.csv
 !data/input/*.csv
 
@@ -55,9 +56,11 @@ results/
 
 # Plots gerados localmente (não versionados)
 plots/
+artifacts/
 
 # Backups / scratch local
 backup/
+tools/
 
 # Logs
 logs/*.log
@@ -85,3 +88,4 @@ config/local_*.yaml
 # Experiments
 experiments/**
 experiments/**/results/
+predep-climate-variability/

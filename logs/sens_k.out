@@ -1,0 +1,80 @@
+[     9s] Modal: 5 containers × 20 sementes, K = [2, 3, 4, 5, 6, 7, 8]
+[  2080s] SOMs prontos — consolidando
+[  2083s] DJF K=2: estab_consenso=0.522 estab_semente=0.194 rho_fontes=0.925 rho_min=0.925 var_explicada=0.062 silhouette=0.285 davies_bouldin=1.476
+[  2086s] DJF K=3: estab_consenso=0.545 estab_semente=0.244 rho_fontes=0.945 rho_min=0.917 var_explicada=0.113 silhouette=0.319 davies_bouldin=1.231
+[  2089s] DJF K=4: estab_consenso=0.386 estab_semente=0.192 rho_fontes=0.944 rho_min=0.850 var_explicada=0.127 silhouette=0.330 davies_bouldin=1.176
+[  2092s] DJF K=5: estab_consenso=0.346 estab_semente=0.202 rho_fontes=0.939 rho_min=0.825 var_explicada=0.140 silhouette=0.333 davies_bouldin=1.122
+[  2095s] DJF K=6: estab_consenso=0.331 estab_semente=0.202 rho_fontes=0.939 rho_min=0.870 var_explicada=0.151 silhouette=0.343 davies_bouldin=1.053
+[  2098s] DJF K=7: estab_consenso=0.388 estab_semente=0.193 rho_fontes=0.926 rho_min=0.844 var_explicada=0.160 silhouette=0.350 davies_bouldin=1.022
+[  2102s] DJF K=8: estab_consenso=0.377 estab_semente=0.191 rho_fontes=0.925 rho_min=0.821 var_explicada=0.173 silhouette=0.355 davies_bouldin=0.982
+[  2105s] MAM K=2: estab_consenso=0.692 estab_semente=0.408 rho_fontes=0.957 rho_min=0.957 var_explicada=0.089 silhouette=0.341 davies_bouldin=1.173
+[  2108s] MAM K=3: estab_consenso=0.510 estab_semente=0.235 rho_fontes=0.927 rho_min=0.909 var_explicada=0.122 silhouette=0.296 davies_bouldin=1.322
+[  2112s] MAM K=4: estab_consenso=0.266 estab_semente=0.174 rho_fontes=0.933 rho_min=0.916 var_explicada=0.131 silhouette=0.321 davies_bouldin=1.198
+[  2115s] MAM K=5: estab_consenso=0.327 estab_semente=0.157 rho_fontes=0.933 rho_min=0.906 var_explicada=0.145 silhouette=0.336 davies_bouldin=1.122
+[  2118s] MAM K=6: estab_consenso=0.284 estab_semente=0.144 rho_fontes=0.918 rho_min=0.803 var_explicada=0.153 silhouette=0.342 davies_bouldin=1.067
+[  2121s] MAM K=7: estab_consenso=0.293 estab_semente=0.148 rho_fontes=0.921 rho_min=0.831 var_explicada=0.156 silhouette=0.350 davies_bouldin=1.021
+[  2124s] MAM K=8: estab_consenso=0.263 estab_semente=0.140 rho_fontes=0.922 rho_min=0.882 var_explicada=0.167 silhouette=0.353 davies_bouldin=0.994
+[  2126s] JJA K=2: estab_consenso=0.900 estab_semente=0.666 rho_fontes=0.650 rho_min=0.650 var_explicada=0.148 silhouette=0.448 davies_bouldin=0.916
+[  2128s] JJA K=3: estab_consenso=0.538 estab_semente=0.296 rho_fontes=0.793 rho_min=0.699 var_explicada=0.199 silhouette=0.306 davies_bouldin=1.209
+[  2131s] JJA K=4: estab_consenso=0.327 estab_semente=0.267 rho_fontes=0.840 rho_min=0.703 var_explicada=0.223 silhouette=0.330 davies_bouldin=1.090
+[  2133s] JJA K=5: estab_consenso=0.356 estab_semente=0.236 rho_fontes=0.832 rho_min=0.703 var_explicada=0.260 silhouette=0.343 davies_bouldin=1.045
+[  2135s] JJA K=6: estab_consenso=0.427 estab_semente=0.240 rho_fontes=0.862 rho_min=0.697 var_explicada=0.280 silhouette=0.345 davies_bouldin=1.015
+[  2138s] JJA K=7: estab_consenso=0.397 estab_semente=0.233 rho_fontes=0.866 rho_min=0.717 var_explicada=0.296 silhouette=0.350 davies_bouldin=0.979
+[  2140s] JJA K=8: estab_consenso=0.470 estab_semente=0.241 rho_fontes=0.866 rho_min=0.693 var_explicada=0.314 silhouette=0.358 davies_bouldin=0.942
+[  2142s] SON K=2: estab_consenso=0.640 estab_semente=0.162 rho_fontes=0.855 rho_min=0.855 var_explicada=0.062 silhouette=0.272 davies_bouldin=1.536
+[  2144s] SON K=3: estab_consenso=0.362 estab_semente=0.125 rho_fontes=0.906 rho_min=0.900 var_explicada=0.081 silhouette=0.296 davies_bouldin=1.313
+[  2146s] SON K=4: estab_consenso=0.327 estab_semente=0.139 rho_fontes=0.938 rho_min=0.915 var_explicada=0.113 silhouette=0.314 davies_bouldin=1.218
+[  2149s] SON K=5: estab_consenso=0.307 estab_semente=0.144 rho_fontes=0.941 rho_min=0.900 var_explicada=0.132 silhouette=0.329 davies_bouldin=1.135
+[  2151s] SON K=6: estab_consenso=0.340 estab_semente=0.157 rho_fontes=0.943 rho_min=0.908 var_explicada=0.148 silhouette=0.337 davies_bouldin=1.072
+[  2154s] SON K=7: estab_consenso=0.313 estab_semente=0.145 rho_fontes=0.943 rho_min=0.924 var_explicada=0.151 silhouette=0.346 davies_bouldin=1.027
+[  2156s] SON K=8: estab_consenso=0.264 estab_semente=0.138 rho_fontes=0.948 rho_min=0.886 var_explicada=0.163 silhouette=0.348 davies_bouldin=0.999
+[  2158s] YEAR K=2: estab_consenso=0.669 estab_semente=0.352 rho_fontes=0.908 rho_min=0.908 var_explicada=0.100 silhouette=0.337 davies_bouldin=1.243
+[  2160s] YEAR K=3: estab_consenso=0.524 estab_semente=0.226 rho_fontes=0.920 rho_min=0.891 var_explicada=0.119 silhouette=0.329 davies_bouldin=1.171
+[  2162s] YEAR K=4: estab_consenso=0.592 estab_semente=0.250 rho_fontes=0.903 rho_min=0.885 var_explicada=0.154 silhouette=0.345 davies_bouldin=1.098
+[  2165s] YEAR K=5: estab_consenso=0.400 estab_semente=0.233 rho_fontes=0.925 rho_min=0.908 var_explicada=0.160 silhouette=0.347 davies_bouldin=1.075
+[  2167s] YEAR K=6: estab_consenso=0.426 estab_semente=0.224 rho_fontes=0.914 rho_min=0.895 var_explicada=0.181 silhouette=0.347 davies_bouldin=1.034
+[  2170s] YEAR K=7: estab_consenso=0.386 estab_semente=0.213 rho_fontes=0.906 rho_min=0.797 var_explicada=0.189 silhouette=0.350 davies_bouldin=0.999
+[  2172s] YEAR K=8: estab_consenso=0.404 estab_semente=0.210 rho_fontes=0.915 rho_min=0.835 var_explicada=0.195 silhouette=0.353 davies_bouldin=0.975
+[  2172s] ✅ /media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/paper/dados/som/sensibilidade_k_alpha.nc
+  ✅ /media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/paper/figuras/som/sensibilidade_k.png
+[  2174s] ✅ /media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/paper/figuras/som/sensibilidade_k.png
+[     8s] Modal: 5 containers × 20 sementes, K = [2, 3, 4, 5, 6, 7, 8]
+[  2935s] SOMs prontos — consolidando
+[  2937s] DJF K=2: estab_consenso=0.960 estab_semente=0.815 rho_fontes=0.997 rho_min=0.997 var_explicada=0.273 silhouette=0.494 davies_bouldin=0.845
+[  2939s] DJF K=3: estab_consenso=0.298 estab_semente=0.402 rho_fontes=0.983 rho_min=0.981 var_explicada=0.323 silhouette=0.354 davies_bouldin=1.083
+[  2942s] DJF K=4: estab_consenso=0.409 estab_semente=0.367 rho_fontes=0.875 rho_min=0.560 var_explicada=0.359 silhouette=0.354 davies_bouldin=1.027
+[  2944s] DJF K=5: estab_consenso=0.779 estab_semente=0.494 rho_fontes=0.952 rho_min=0.831 var_explicada=0.419 silhouette=0.372 davies_bouldin=0.954
+[  2946s] DJF K=6: estab_consenso=0.733 estab_semente=0.558 rho_fontes=0.970 rho_min=0.938 var_explicada=0.470 silhouette=0.370 davies_bouldin=0.939
+[  2949s] DJF K=7: estab_consenso=0.745 estab_semente=0.532 rho_fontes=0.922 rho_min=0.705 var_explicada=0.467 silhouette=0.368 davies_bouldin=0.930
+[  2952s] DJF K=8: estab_consenso=0.761 estab_semente=0.511 rho_fontes=0.913 rho_min=0.692 var_explicada=0.478 silhouette=0.370 davies_bouldin=0.901
+[  2954s] MAM K=2: estab_consenso=0.848 estab_semente=0.690 rho_fontes=0.973 rho_min=0.973 var_explicada=0.205 silhouette=0.437 davies_bouldin=0.943
+[  2956s] MAM K=3: estab_consenso=0.856 estab_semente=0.567 rho_fontes=0.908 rho_min=0.806 var_explicada=0.264 silhouette=0.357 davies_bouldin=1.120
+[  2958s] MAM K=4: estab_consenso=0.685 estab_semente=0.467 rho_fontes=0.951 rho_min=0.902 var_explicada=0.313 silhouette=0.345 davies_bouldin=1.089
+[  2961s] MAM K=5: estab_consenso=0.658 estab_semente=0.422 rho_fontes=0.924 rho_min=0.856 var_explicada=0.340 silhouette=0.349 davies_bouldin=1.056
+[  2963s] MAM K=6: estab_consenso=0.620 estab_semente=0.392 rho_fontes=0.943 rho_min=0.920 var_explicada=0.375 silhouette=0.354 davies_bouldin=1.014
+[  2966s] MAM K=7: estab_consenso=0.597 estab_semente=0.366 rho_fontes=0.937 rho_min=0.899 var_explicada=0.379 silhouette=0.354 davies_bouldin=0.971
+[  2968s] MAM K=8: estab_consenso=0.485 estab_semente=0.405 rho_fontes=0.931 rho_min=0.859 var_explicada=0.403 silhouette=0.359 davies_bouldin=0.948
+[  2970s] JJA K=2: estab_consenso=0.924 estab_semente=0.815 rho_fontes=0.955 rho_min=0.955 var_explicada=0.203 silhouette=0.446 davies_bouldin=0.981
+[  2972s] JJA K=3: estab_consenso=0.797 estab_semente=0.496 rho_fontes=0.955 rho_min=0.920 var_explicada=0.270 silhouette=0.347 davies_bouldin=1.069
+[  2974s] JJA K=4: estab_consenso=0.853 estab_semente=0.619 rho_fontes=0.962 rho_min=0.943 var_explicada=0.332 silhouette=0.371 davies_bouldin=0.992
+[  2976s] JJA K=5: estab_consenso=0.870 estab_semente=0.629 rho_fontes=0.947 rho_min=0.893 var_explicada=0.383 silhouette=0.382 davies_bouldin=0.945
+[  2978s] JJA K=6: estab_consenso=0.787 estab_semente=0.546 rho_fontes=0.959 rho_min=0.927 var_explicada=0.411 silhouette=0.389 davies_bouldin=0.890
+[  2981s] JJA K=7: estab_consenso=0.680 estab_semente=0.476 rho_fontes=0.951 rho_min=0.902 var_explicada=0.417 silhouette=0.385 davies_bouldin=0.874
+[  2983s] JJA K=8: estab_consenso=0.674 estab_semente=0.449 rho_fontes=0.949 rho_min=0.887 var_explicada=0.441 silhouette=0.376 davies_bouldin=0.888
+[  2985s] SON K=2: estab_consenso=0.917 estab_semente=0.712 rho_fontes=0.986 rho_min=0.986 var_explicada=0.219 silhouette=0.429 davies_bouldin=0.913
+[  2987s] SON K=3: estab_consenso=0.796 estab_semente=0.530 rho_fontes=0.984 rho_min=0.977 var_explicada=0.290 silhouette=0.354 davies_bouldin=1.107
+[  2989s] SON K=4: estab_consenso=0.699 estab_semente=0.568 rho_fontes=0.955 rho_min=0.928 var_explicada=0.336 silhouette=0.376 davies_bouldin=0.976
+[  2991s] SON K=5: estab_consenso=0.803 estab_semente=0.508 rho_fontes=0.956 rho_min=0.936 var_explicada=0.375 silhouette=0.373 davies_bouldin=0.959
+[  2993s] SON K=6: estab_consenso=0.658 estab_semente=0.528 rho_fontes=0.968 rho_min=0.947 var_explicada=0.398 silhouette=0.370 davies_bouldin=0.944
+[  2995s] SON K=7: estab_consenso=0.700 estab_semente=0.501 rho_fontes=0.955 rho_min=0.937 var_explicada=0.413 silhouette=0.369 davies_bouldin=0.942
+[  2997s] SON K=8: estab_consenso=0.644 estab_semente=0.479 rho_fontes=0.944 rho_min=0.878 var_explicada=0.419 silhouette=0.367 davies_bouldin=0.927
+[  2999s] YEAR K=2: estab_consenso=0.966 estab_semente=0.859 rho_fontes=0.989 rho_min=0.989 var_explicada=0.309 silhouette=0.495 davies_bouldin=0.821
+[  3001s] YEAR K=3: estab_consenso=0.893 estab_semente=0.650 rho_fontes=0.958 rho_min=0.905 var_explicada=0.372 silhouette=0.379 davies_bouldin=1.058
+[  3003s] YEAR K=4: estab_consenso=0.900 estab_semente=0.740 rho_fontes=0.980 rho_min=0.961 var_explicada=0.432 silhouette=0.404 davies_bouldin=0.917
+[  3005s] YEAR K=5: estab_consenso=0.845 estab_semente=0.685 rho_fontes=0.957 rho_min=0.914 var_explicada=0.459 silhouette=0.388 davies_bouldin=0.944
+[  3007s] YEAR K=6: estab_consenso=0.874 estab_semente=0.673 rho_fontes=0.944 rho_min=0.824 var_explicada=0.485 silhouette=0.397 davies_bouldin=0.887
+[  3009s] YEAR K=7: estab_consenso=0.840 estab_semente=0.588 rho_fontes=0.950 rho_min=0.806 var_explicada=0.498 silhouette=0.381 davies_bouldin=0.909
+[  3012s] YEAR K=8: estab_consenso=0.785 estab_semente=0.607 rho_fontes=0.964 rho_min=0.921 var_explicada=0.520 silhouette=0.371 davies_bouldin=0.913
+[  3012s] ✅ /media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/paper/dados/som/sensibilidade_k_r2.nc
+  ✅ /media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/paper/figuras/som/sensibilidade_k.png
+[  3014s] ✅ /media/matteuscruz/Projects/Entrep/irc_predep_bootstrap/paper/figuras/som/sensibilidade_k.png
