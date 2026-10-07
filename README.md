@@ -146,12 +146,11 @@ Configuração usada no artigo: `predep_janela_1982_2024_anom_nb10000` (anomalia
 calculadas e juntadas (seções 3 e 5).
 
 ```bash
-# 1. lags 8, 10 e 12 — só o observado, um lag por vez, no Modal
-for L in 8 10 12; do
+# 1. lags 1,2,4,6,8,10 12 
+for L in 1 2 4 6 8 10 12; do
   python main.py --bacia all --anomalias --n-boot 10000 \
       --lag-min $L --lag-max $L --shifts 0 --pular-som --pular-figuras --sim
 done
-# baixe as fatias s*_l{8,10,12}_d0.npz do volume para data/fatias_modal/<config>/<bacia>/
 
 # 2. cubo nacional com todos os lags → raw/basins/brasil_lags.nc
 python tools/juntar_lags.py
@@ -167,7 +166,7 @@ python tools/som_consenso_local.py --n-boot 10000 --entrada brasil_lags.nc \
 python tools/som_consenso_local.py --n-boot 10000 --entrada brasil_lags.nc \
     --com-ano --metrica r2 --modal
 
-# 5. sensibilidade ao número de regimes (K = 2..8), no Modal
+# 5. sensibilidade ao número de regimes (K = 2..N), no Modal
 python tools/som_sensibilidade_k.py --metrica alpha
 python tools/som_sensibilidade_k.py --metrica r2
 ```
