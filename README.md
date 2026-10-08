@@ -7,6 +7,18 @@ figuras. O ponto de entrada é o `main.py`, e o cálculo roda no **Modal**.
 
 ## 1. Instalação
 
+Os arquivos `.nc` do repositório (a janela comum e os dados das figuras) estão no
+Git LFS. Instale o LFS antes de clonar, ou baixe-os depois:
+
+```bash
+sudo apt install git-lfs && git lfs install      # uma vez por máquina
+git clone https://github.com/matteuscruz/irc_predep_bootstrap.git
+git lfs pull                                     # se o clone veio sem os .nc
+```
+
+Sem o LFS, os `.nc` aparecem como arquivos-texto de ~130 bytes (ponteiros) e o
+`xarray` falha ao abri-los.
+
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt modal pyshp
@@ -21,6 +33,21 @@ científica local estiver quebrada, mas `--listar`, `--assinaturas` e
 ## 2. Dados de entrada (uma vez só)
 
 O que está no git, o que precisa ser baixado e os checksums: [data/README.md](data/README.md).
+
+Arquivos necessários e onde estão:
+
+| arquivo | para quê | no git? |
+|---|---|---|
+| `data/processed/common_window/predep_janela_1982_2024.nc` (213 MB) | entrada única do pipeline (PREDEP, r², SOM) | sim, via LFS |
+| `data/clusters/<bacia>/` | shapefiles das 12 bacias | sim |
+| `data/raw/mov_indices/` | os 29 índices originais | sim |
+| `data/reference/south_america_110m.geojson` | contornos dos mapas | sim |
+| `plots_artigo/dados/` (37 MB) | `.nc` para redesenhar as figuras do artigo | sim, via LFS |
+| `data/raw/xavier_daily/`, `data/raw/chirps_daily/` (~17 GB) | só para refazer a janela comum | não — ver `data/README.md` |
+| `plots_artigo/dados/cubo/` (~1 GB) | α e r² completos por MoV | não — só local |
+
+Com o clone e o `git lfs pull`, a janela comum já está pronta: pule a geração abaixo e
+vá direto ao envio ao Modal (se o volume ainda não a tiver).
 
 O Modal lê dois itens do volume `predep-common-window`:
 
