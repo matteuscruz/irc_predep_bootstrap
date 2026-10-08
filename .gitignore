@@ -42,14 +42,18 @@ references/
 *~
 
 # Data
-data/raw/
-data/processed/
+data/raw/*
+!data/raw/mov_indices/
+data/processed/*
+!data/processed/common_window/
+data/processed/common_window/*
 data/fatias_modal/
-!data/raw/mov_indices/*.csv
 !data/input/*.csv
 
 # NetCDF / binários grandes
 *.nc
+# exceção: a janela comum, entrada única do pipeline (vai via LFS)
+!data/processed/common_window/predep_janela_1982_2024.nc
 
 # Results
 results/

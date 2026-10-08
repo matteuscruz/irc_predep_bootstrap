@@ -20,6 +20,8 @@ científica local estiver quebrada, mas `--listar`, `--assinaturas` e
 
 ## 2. Dados de entrada (uma vez só)
 
+O que está no git, o que precisa ser baixado e os checksums: [data/README.md](data/README.md).
+
 O Modal lê dois itens do volume `predep-common-window`:
 
 | no volume | origem local |

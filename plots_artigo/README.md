@@ -30,18 +30,18 @@ serve só para conferência.
 
 ## Dados de entrada
 
-Uma cópia dos `.nc` usados pelas figuras está em `plots_artigo/dados/` (68 MB,
+Uma cópia dos `.nc` usados pelas figuras está em `plots_artigo/dados/` (37 MB,
 versionada via Git LFS), então a pasta é autossuficiente para gerar as figuras:
 
 ```
 dados/
 ├── max_lags/
-│   ├── predep_max_lags.nc        23 MB   PREDEP máximo por estação × lag × célula
-│   └── r2_max_lags.nc            23 MB   o mesmo para o r²
+│   ├── predep_max_lags.nc        17 MB   PREDEP máximo por estação × lag × célula
+│   └── r2_max_lags.nc            16 MB   o mesmo para o r²
 ├── cubo/                         ~1 GB   PREDEP e r² completos (só local, fora do git)
 └── som/
-    ├── som_predep.nc             4,6 MB  SOM de consenso sobre o PREDEP (α)
-    ├── som_r2.nc                 18 MB   SOM de consenso sobre o r²
+    ├── som_predep.nc             2,7 MB  SOM de consenso sobre o PREDEP (α)
+    ├── som_r2.nc                 3,0 MB   SOM de consenso sobre o r²
     ├── sensibilidade_k_alpha.nc  16 kB   métricas por K, PREDEP
     └── sensibilidade_k_r2.nc     16 kB   métricas por K, r²
 ```
@@ -54,7 +54,7 @@ cada fonte, estação, lag e célula:
 | arquivo | tamanho | variável e dimensões |
 |---|---|---|
 | `cubo/predep_brasil.nc` | 478 MB | `alpha` (source=xavier,chirps × season × lag=0–6,8,10,12 × mov_name=29 × pixel=70.189) |
-| `cubo/r2_brasil.nc` | 530 MB | `r2`, mesmas dimensões |
+| `cubo/r2_brasil.nc` | 529 MB | `r2`, mesmas dimensões |
 
 É a base de onde saem todos os outros arquivos (máximos, SOM). Não vai para o git:
 cerca de 1 GB excede o limite de arquivo e a cota gratuita de LFS do GitHub; está em
@@ -68,6 +68,8 @@ cerca de 1 GB excede o limite de arquivo e a cota gratuita de LFS do GitHub; est
 | `{predep,r2}_max_lags.nc` | `valor_max`, `mov_max`, `dif_fontes` (estação, lag, célula) | `tools/fig_predep_max_lags.py` | `artifacts/<config>/plots/brasil/predep_max_lags/` |
 | `som_{predep,r2}.nc` | `regime`, `confianca`, `assinatura` (por fonte), `concord_assinatura` (ρ), `estab_consenso`, `sel_lag`, `sel_mov` | `tools/som_consenso_local.py` | `artifacts/<config>/som/brasil_consenso_todos_lags[_r2].nc` |
 | `sensibilidade_k_{alpha,r2}.nc` | `estab_consenso`, `rho_fontes`, `var_explicada`, `silhouette` (estação, K) | `tools/som_sensibilidade_k.py` | gerado direto em `paper/dados/som/` |
+
+Todos os `.nc` estão comprimidos sem perda (zlib nível 5, com shuffle).
 
 Configuração de todos: `predep_janela_1982_2024_anom_nb10000` — anomalias mensais,
 janeiro de 1982 a dezembro de 2024, 70.189 células, 29 MoVs, lags 0–6, 8, 10 e 12,
