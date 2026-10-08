@@ -1,0 +1,73 @@
+% Fluxograma: dos cubos de PREDEP/r² aos mapas de máximo e aos regimes do SOM.
+% Uso no main.tex: \usepackage{tikz} + \usetikzlibrary{positioning,arrows.meta,fit,backgrounds}
+% e \input{figs/fluxograma/fluxograma.tex} dentro de um figure*.
+\begin{tikzpicture}[
+  node distance=4mm and 6mm,
+  font=\footnotesize,
+  box/.style={draw, rounded corners=2pt, align=flush center, text width=#1,
+              inner sep=3pt, minimum height=8mm, fill=white},
+  box/.default=46mm,
+  dado/.style={box=#1, fill=blue!6},
+  dado/.default=46mm,
+  passo/.style={box=#1, fill=gray!8},
+  passo/.default=46mm,
+  conc/.style={box=#1, fill=orange!12, draw=orange!70!black},
+  conc/.default=46mm,
+  saida/.style={box=#1, fill=green!10, draw=green!45!black, very thick},
+  saida/.default=46mm,
+  seta/.style={-{Stealth[length=2mm]}, thick},
+  grupo/.style={draw=gray!60, dashed, rounded corners=4pt, inner sep=4pt},
+]
+% ── entrada ───────────────────────────────────────────────────────────────
+\node[dado=30mm] (xav) {Xavier\\monthly rainfall};
+\node[dado=30mm, right=18mm of xav] (chi) {CHIRPS\\regridded to Xavier};
+\node[dado=30mm, right=18mm of chi] (mov) {29 climate indices};
+\node[passo=110mm, below=of chi] (anom) {Monthly anomalies (per product) $\cdot$ pairs $(X_{t-\ell}, Y_t)$,
+  $\ell \in \{0,\dots,6,8,10,12\}$};
+\node[passo=110mm, below=of anom] (cubo) {PREDEP $\alpha$ and $r^2$ for every product $\times$ season $\times$ lag $\times$ index $\times$ cell\\
+  (Ward $k=\lfloor\sqrt n\rfloor$, Gaussian KDE, $n_b = 10{,}000$)};
+\draw[seta] (xav.south) -- (xav.south |- anom.north);
+\draw[seta] (chi) -- (anom);
+\draw[seta] (mov.south) -- (mov.south |- anom.north);
+\draw[seta] (anom) -- (cubo);
+
+% ── ramo A: máximo por lag ────────────────────────────────────────────────
+\node[passo, below=12mm of cubo.south west, anchor=north west] (medA) {Mean of the two products\\$\bar\alpha = (\alpha^{\mathrm{Xav}} + \alpha^{\mathrm{CHI}})/2$};
+\node[passo, below=of medA] (maxA) {For each season, lag and cell:\\$\max_{m} \bar\alpha$ and winning index $m^*$};
+\node[conc, below=of maxA] (difA) {Agreement at $m^*$:\\$|\alpha^{\mathrm{CHI}} - \alpha^{\mathrm{Xav}}|$\\
+  full opacity $< 0.1$, 35\% at $\geq 0.3$\\($r^2$: $\tfrac13$ median, 0.0175)};
+\node[saida, below=of difA] (mapA) {Maximum PREDEP / $r^2$ maps\\and winning-index maps\\(all cells)};
+\draw[seta] (medA) -- (maxA);
+\draw[seta] (maxA) -- (difA);
+\draw[seta] (difA) -- (mapA);
+
+% ── ramo B: par de referência e SOM ───────────────────────────────────────
+\node[conc, below=12mm of cubo.south east, anchor=north east] (refB) {Reference pair per season\\
+  $\arg\max_{\ell,m}$ spatial mean of\\$\min(\alpha^{\mathrm{Xav}}, \alpha^{\mathrm{CHI}})$};
+\node[passo, below=of refB] (featB) {Features: $\bar\alpha$ of the 29 indices\\at the reference lag, $z$-score};
+\node[passo, below=of featB] (somB) {20 SOMs ($30\times30$, 50 epochs)\\$k$-means of neurons, $K = 4$};
+\node[passo, below=of somB] (votoB) {Hungarian alignment\\majority vote $\rightarrow$ regime\\and per-cell confidence};
+\node[conc, below=of votoB] (rhoB) {Signatures computed separately\\for Xavier and CHIRPS\\$\rightarrow$ Spearman $\rho$ per regime};
+\node[saida, below=of rhoB] (mapB) {Consensus regimes\\and characteristic indices};
+\draw[seta] (refB) -- (featB);
+\draw[seta] (featB) -- (somB);
+\draw[seta] (somB) -- (votoB);
+\draw[seta] (votoB) -- (rhoB);
+\draw[seta] (rhoB) -- (mapB);
+
+\node[passo=30mm, right=8mm of somB] (sensB) {Sensitivity:\\$K = 2,\dots,8$\\stability, $\rho$,\\variance, silhouette};
+\draw[seta, dashed] (somB) -- (sensB);
+
+\draw[seta] (cubo.south) -- ++(0,-3mm) -| (medA.north);
+\draw[seta] (cubo.south) -- ++(0,-3mm) -| (refB.north);
+
+% ── rótulos dos ramos ────────────────────────────────────────────────────
+\begin{scope}[on background layer]
+  \node[grupo, fit=(medA)(mapA), label={[font=\footnotesize\bfseries]below:A. Maximum dependence (Figs.~\ref*{fig:predep_max}--\ref*{fig:r2_max})}] {};
+  \node[grupo, fit=(refB)(mapB), label={[font=\footnotesize\bfseries]below:B. Regimes (Figs.~\ref*{fig:som_consenso}--\ref*{fig:sens_k})}] {};
+\end{scope}
+
+% legenda
+\node[conc=30mm, minimum height=5mm, below=12mm of mapA] (l1) {cross-product step};
+\node[saida=30mm, minimum height=5mm, below=2mm of l1] {output};
+\end{tikzpicture}

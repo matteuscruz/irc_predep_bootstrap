@@ -1,0 +1,7 @@
+figuras/
+__pycache__/
+# os .nc do artigo vão para o git (via LFS, ver .gitattributes da raiz)
+!dados/
+!dados/**/*.nc
+# o cubo completo (~1 GB) fica só local: excede o limite/cota do GitHub
+dados/cubo/

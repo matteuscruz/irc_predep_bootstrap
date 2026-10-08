@@ -1,0 +1,9 @@
+% Fluxograma do artigo como PDF isolado: pdflatex fluxograma_standalone.tex
+% Os \ref* para as figuras do artigo aparecem como "??" fora do artigo.
+\documentclass[border=4pt]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,tikz,hyperref}
+\usetikzlibrary{positioning,arrows.meta,fit,backgrounds}
+\begin{document}
+\input{fluxograma.tex}
+\end{document}

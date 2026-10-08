@@ -189,6 +189,9 @@ Opções do SOM de consenso: `--modal` treina um container por estação (5 no t
 `--entrada-som minimo` usa min(α_Xav, α_CHI) por MoV em vez da média (teste de
 sensibilidade, só com `--modal`); sem `--modal` roda local (horas).
 
+Para só redesenhar as figuras do artigo a partir desses `.nc`, use `plots_artigo/`
+(`cd plots_artigo && make`; ver o README de lá).
+
 A pasta `paper/` reúne cópias das figuras (`figuras/`) e dos `.nc` (`dados/`) usados
 no artigo; os artigos estão em `predep-climate-variability/` (`main.tex` e
 `oficial_paper/main.tex`), com as figuras em `figs/`.
