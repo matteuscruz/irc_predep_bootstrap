@@ -3,5 +3,7 @@ __pycache__/
 # os .nc do artigo vão para o git (via LFS, ver .gitattributes da raiz)
 !dados/
 !dados/**/*.nc
-# o cubo completo (~1 GB) fica só local: excede o limite/cota do GitHub
-dados/cubo/
+# os cubos float32 originais ficam só local (456+505 MB excederiam a cota LFS)
+dados/cubo/predep_brasil.nc
+dados/cubo/r2_brasil.nc
+# versão int16 compactada (~430 MB) vai via LFS
